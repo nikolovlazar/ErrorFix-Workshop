@@ -10,8 +10,6 @@ interface ProductPageProps {
 
 export async function generateStaticParams() {
   try {
-    // This will only work during build time when database is available
-    // For development, it's just a best-effort approach
     const products = await getAllProducts();
     return products.map((product) => ({
       id: product.id,

@@ -1,85 +1,71 @@
-/**
- * FILE OVERVIEW:
- * Purpose: API endpoint to provide information about accessing products
- * Key Concepts: Next.js API routes, Client-side database
- * Module Type: API Handler
- */
-
 import { NextResponse } from 'next/server';
 import { sql } from 'drizzle-orm';
-import { products } from '@/lib/data'; // Import static data for fallback
-
-// Flag to disable fallback products
-const DISABLE_FALLBACK_PRODUCTS = true;
+import { initDb } from '@/lib/db/db-server';
+// import * as Sentry from '@sentry/nextjs';
 
 /**
  * GET handler for /api/products
- * Returns all products from the client-side database or falls back to static data
+ * Returns all products from the PostgreSQL database
  */
 export async function GET() {
   console.log('🔄 API: Products API route accessed');
   
   try {
-    // First try to access the client-side database
-    try {
-      // Dynamically import the client DB
-      const { getDB } = await import('@/lib/db/client');
-      const db = await getDB();
-      
-      if (!db) {
-        throw new Error('Database client is null');
-      }
-      
-      // Query all products
-      const result = await db.execute(sql`SELECT * FROM "products"`);
-      
-      if (result.rows && result.rows.length > 0) {
-        return NextResponse.json({ 
-          success: true, 
-          products: result.rows 
-        });
-      } else {
-        // If DB returns empty result, fall through to static data
-        console.log('DB returned empty result, falling back to static data');
-        
-        // Respect the flag for fallback data
-        if (DISABLE_FALLBACK_PRODUCTS) {
-          return NextResponse.json({ 
-            success: true, 
-            products: [],
-            source: 'empty_database'
-          });
-        }
-      }
-    } catch (dbError) {
-      // Log the error but continue to fallback data
-      console.log('Cannot access database from server:', dbError);
-      
-      // Respect the flag for fallback data
-      if (DISABLE_FALLBACK_PRODUCTS) {
-        return NextResponse.json({ 
-          success: true, 
-          products: [],
-          source: 'db_error'
-        });
-      }
-    }
+    const { db } = await initDb();
     
-    // Fallback to static data if DB access fails or returns no results
-    console.log('Using static product data as fallback');
-    return NextResponse.json({ 
-      success: true, 
-      products: products,
-      source: 'static_fallback'
-    });
+    // BREAK-THIS: Ha - I've sabotaged you with bad queries
+    const result = await db.execute(sql`SELECT * FROM "product"`);
     
+    // Parse JSON fields in the result
+    const products = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: row.price,
+      category: row.category,
+      featured: row.featured,
+      inStock: row.in_stock,
+      rating: row.rating,
+      reviewCount: row.review_count,
+      images: parseJsonField(row.images),
+      sizes: parseJsonField(row.sizes),
+      colors: parseJsonField(row.colors)
+    }));
+    
+    // Return the products
+    return NextResponse.json(products);
   } catch (error) {
     console.error('Error in products API route:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Error processing request',
-      error: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    
+    // SENTRY-THIS: Cathing your exceptions!
+    // Sentry.captureException(error);
+
+    // Return standardized error response with more details
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch products from database',
+        message: 'An error occurred while retrieving products',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Helper function to parse JSON fields
+ */
+function parseJsonField(value: any): any[] {
+  if (!value) return [];
+  
+  try {
+    if (typeof value === 'string') {
+      return JSON.parse(value);
+    }
+    return value;
+  } catch (e) {
+    console.error('Error parsing JSON field:', e);
+    return [];
   }
 }
 

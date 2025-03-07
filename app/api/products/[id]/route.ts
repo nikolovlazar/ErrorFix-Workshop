@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { products } from '@/lib/data'; // Keep for generateStaticParams
 import { sql } from 'drizzle-orm';
+import { initDb } from '@/lib/db/db-server';
+// import * as Sentry from '@sentry/nextjs';
+import { products } from '@/lib/data';
 
 export async function GET(
   request: Request,
@@ -10,57 +12,92 @@ export async function GET(
   console.log(`🔍 API: Looking for product with ID ${id}`);
   
   try {
-    // In a server environment, we'll dynamically import the client DB
-    // This matches how we're accessing the DB in the reset route
-    try {
-      const { getDB } = await import('@/lib/db/client');
-      const db = await getDB();
-      
-      if (!db) {
-        throw new Error('Database client is null');
-      }
-      
-      // Use a more specific query with error handling for invalid IDs
-      const numId = parseInt(id, 10);
-      if (isNaN(numId)) {
-        return NextResponse.json({ error: `Invalid product ID: ${id}` }, { status: 400 });
-      }
-      
-      const result = await db.execute(sql`SELECT * FROM "products" WHERE id = ${numId}`);
-      
-      if (result.rows && result.rows.length > 0) {
-        return NextResponse.json({ success: true, product: result.rows[0] });
-      }
-      
-      // Fall through to static data if DB has no matching product
-    } catch (dbError) {
-      // Just log and continue to fallback if we can't access the DB
-      console.log('Cannot access database from server:', dbError);
+    // Initialize the server-side database connection
+    const { db } = await initDb();
+    
+    // Use a more specific query with error handling for invalid IDs
+    const numId = parseInt(id, 10);
+    if (isNaN(numId)) {
+      return NextResponse.json({ 
+        error: `Invalid product ID: ${id}`,
+        message: 'The product ID must be a valid number',
+        code: 'INVALID_ID'
+      }, { status: 400 });
     }
     
-    // Fallback to static data
-    const staticProduct = products.find(p => String(p.id) === id);
+    // BREAK-THIS: Ha - I've sabotaged you with bad queries
+    const result = await db.execute(sql`SELECT * FROM "product" WHERE id = ${numId}`);
     
-    if (staticProduct) {
-      return NextResponse.json({ success: true, product: staticProduct });
+    if (result.rows && result.rows.length > 0) {
+      const row = result.rows[0];
+      
+      // Parse JSON fields
+      const product = {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        price: row.price,
+        category: row.category,
+        featured: row.featured,
+        inStock: row.in_stock,
+        rating: row.rating,
+        reviewCount: row.review_count,
+        images: parseJsonField(row.images),
+        sizes: parseJsonField(row.sizes),
+        colors: parseJsonField(row.colors)
+      };
+      
+      return NextResponse.json(product);
     }
     
+    // If no product found in database, return 404 (removed fallback to static data)
     return NextResponse.json(
-      { success: false, error: `Product not found: ${id}` },
+      { 
+        error: `Product not found: ${id}`,
+        message: 'The requested product does not exist in the database',
+        code: 'PRODUCT_NOT_FOUND'
+      },
       { status: 404 }
     );
   } catch (error) {
     console.error(`API error for product ${id}:`, error);
+    
+    // SENTRY-THIS: Cathing your exceptions!
+    // Sentry.captureException(error);
+
+    // Return standardized error response with more details
     return NextResponse.json(
-      { success: false, error: String(error) },
+      { 
+        error: 'Failed to fetch product from database',
+        message: 'An error occurred while retrieving the product',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+        code: 'DATABASE_ERROR'
+      },
       { status: 500 }
     );
   }
 }
 
+/**
+ * Helper function to parse JSON fields
+ */
+function parseJsonField(value: any): any[] {
+  if (!value) return [];
+  
+  try {
+    if (typeof value === 'string') {
+      return JSON.parse(value);
+    }
+    return value;
+  } catch (e) {
+    console.error('Error parsing JSON field:', e);
+    return [];
+  }
+}
+
 // This is needed for Next.js static generation
 export function generateStaticParams() {
-  return products.map(product => ({
+  return products.map((product: any) => ({
     id: String(product.id),
   }));
 }

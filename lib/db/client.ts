@@ -1,102 +1,97 @@
-import { PGliteWorker } from "@electric-sql/pglite/worker";
-import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema";
-import { runMigrations } from "./migrations";
-
-let pgWorkerClient: PGliteWorker;
-let dbInitializationPromise: Promise<ReturnType<typeof drizzle>> | null = null;
-let dbInitialized = false;
 
 // Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined' && typeof Worker !== 'undefined';
+const isBrowser = typeof window !== 'undefined';
 
-// Create a mock DB interface that will be used for server-side rendering
+// Create a mock DB interface for browser environment
 const createMockDB = () => {
-  console.log('Creating mock database interface for server environment');
+  console.log('Creating mock database interface for browser environment');
   
-  // Return a mock DB that has the same interface but returns empty results
   return {
-    execute: async (query: any) => {
-      console.log('Mock DB execute called with:', query);
+    execute: async () => {
+      console.log('Mock DB execute called in browser environment');
       return { rows: [] };
     },
-    // Add other methods as needed to match the Drizzle interface
     query: async () => ({ rows: [] }),
-    // This makes sure we don't break during migrations
-    dialect: {
-      migrate: async () => Promise.resolve(),
-    },
   };
 };
 
+// Only import node-postgres in server environment
+let pgPool: any;
+let dbInitializationPromise: Promise<any> | null = null;
+let dbInitialized = false;
+let drizzleInstance: any;
+
+// Dynamic imports for server-side only
+if (!isBrowser) {
+  // This code will only run on the server
+  import('drizzle-orm/node-postgres').then((drizzleModule) => {
+    drizzleInstance = drizzleModule.drizzle;
+  });
+}
+
 export const getDB = async () => {
-    if (dbInitialized) {
-      console.log('Database already initialized, reusing existing connection');
-      return dbInitializationPromise;
-    }
-    
-    if (!dbInitializationPromise) {
-      console.log('Starting database initialization...');
-      dbInitializationPromise = (async () => {
-        try {
-          if (isBrowser) {
-            // Browser environment: Use PGliteWorker with Web Worker
-            console.log('Initializing database in browser environment with Web Worker');
-            pgWorkerClient = new PGliteWorker(
-              new Worker(new URL("./pg-lite-worker.ts", import.meta.url), {
-                type: "module",
-              }),
-              {
-                dataDir: "idb://pgdata",
-                meta: {},
-              },
-            );
-            
-            console.log('Initializing Drizzle ORM with worker client...');
-            const db = drizzle(pgWorkerClient as any, { schema });
-            
-            console.log('Running migrations...');
-            await runMigrations(db);
-            
-            console.log('✅ Browser database initialization complete');
-            dbInitialized = true;
-            return db;
-          } else {
-            // Server/Node.js environment: Use mock DB
-            console.log('📋 Creating mock database for server environment');
-            
-            // Create a mock DB interface
-            const mockDbClient = createMockDB();
-            
-            // Wrap it in Drizzle interface for consistency
-            const db = drizzle(mockDbClient as any, { schema });
-            
-            console.log('✅ Server mock database initialization complete');
-            dbInitialized = true;
-            return db;
-          }
-        } catch (error) {
-          console.error('❌ Error initializing database:', error);
-          dbInitialized = false;
-          dbInitializationPromise = null;
-          throw error;
-        }
-      })();
-    }
+  if (dbInitialized) {
+    console.log('Database already initialized, reusing existing connection');
     return dbInitializationPromise;
-  };
+  }
   
-  export const getPGClient = async () => {
-    if (!pgWorkerClient) {
-      if (isBrowser) {
-        console.log('PGClient not initialized, initializing database...');
-        await getDB();
-        return pgWorkerClient;
-      } else {
-        console.log('Server environment detected, no PGClient available');
-        throw new Error('PGClient is not available in server environment');
+  if (!dbInitializationPromise) {
+    console.log('Starting database initialization...');
+    dbInitializationPromise = (async () => {
+      try {
+        if (isBrowser) {
+          // Browser environment: Return mock DB
+          console.log('Browser environment detected, returning mock database');
+          const mockDb = createMockDB();
+          dbInitialized = true;
+          return mockDb;
+        } else {
+          // Server/Node.js environment: Use real PostgreSQL connection
+          console.log('Initializing PostgreSQL connection in server environment');
+          
+          // Dynamically import pg in server environment
+          const { Pool } = await import('pg');
+          
+          // Create PostgreSQL client
+          const connectionString = process.env.DATABASE_URL;
+          if (!connectionString) {
+            throw new Error('DATABASE_URL environment variable is not set');
+          }
+          
+          pgPool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false }
+          });
+          
+          // Initialize Drizzle ORM
+          const db = drizzleInstance(pgPool, { schema });
+          
+          console.log('✅ Server database initialization complete');
+          dbInitialized = true;
+          return db;
+        }
+      } catch (error) {
+        console.error('❌ Error initializing database:', error);
+        dbInitialized = false;
+        dbInitializationPromise = null;
+        throw error;
       }
-    }
-    
-    return pgWorkerClient;
-  };
+    })();
+  }
+  return dbInitializationPromise;
+};
+
+export const getPGClient = async () => {
+  if (isBrowser) {
+    console.log('Browser environment detected, no direct PostgreSQL client available');
+    return createMockDB();
+  }
+  
+  if (!pgPool) {
+    console.log('PostgreSQL client not initialized, initializing database...');
+    await getDB();
+  }
+  
+  return pgPool;
+};

@@ -7,12 +7,17 @@ export async function POST(request: Request) {
     console.log(body);
     const { email, password } = body;
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // BREAK-THIS: Ha - I've sabotaged you with SLOW LOGINS
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { 
+          error: 'Invalid email format',
+          message: 'Please provide a valid email address',
+          code: 'INVALID_EMAIL'
+        },
         { status: 400 }
       );
     }
@@ -27,7 +32,12 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Login API error:', error);
     return NextResponse.json(
-      { error: 'Authentication failed' },
+      { 
+        error: 'Authentication failed',
+        message: 'An error occurred during the authentication process',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+        code: 'AUTH_ERROR'
+      },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
 /**
  * FILE OVERVIEW:
- * Purpose: Provide data access methods for product-related operations using Drizzle ORM and PGlite
- * Key Concepts: Repository pattern, Drizzle ORM, PGlite, Data access layer
+ * Purpose: Provide data access methods for product-related operations using Drizzle ORM and PostgreSQL
+ * Key Concepts: Repository pattern, Drizzle ORM, PostgreSQL, Data access layer
  * Module Type: Repository
  * @ai_context: This file implements the repository pattern for product-related database operations
  */
@@ -9,6 +9,7 @@
 import { schema } from '../index';
 import { getDB, getPGClient } from '../client';
 import { Product as ProductType } from '@/types';
+import { sql } from 'drizzle-orm';
 
 // Repository for product-related operations
 export class ProductRepository {
@@ -16,10 +17,10 @@ export class ProductRepository {
   async getAllProducts(): Promise<ProductType[]> {
     try {
       const db = await getDB();
-      const pglite = await getPGClient();
+      const pgPool = await getPGClient();
       
       // Using raw query for complex joins across multiple tables
-      const result = await pglite.query(`
+      const result = await pgPool.query(`
         SELECT 
           p.id, 
           p.name, 
@@ -29,49 +30,31 @@ export class ProductRepository {
           p.featured, 
           p.in_stock as "inStock", 
           p.rating, 
-          p.review_count as "reviewCount"
+          p.review_count as "reviewCount",
+          p.images,
+          p.sizes,
+          p.colors
         FROM products p
         ORDER BY p.id
       `);
       
-      // Get the basic product data
-      const products = result.rows as Omit<ProductType, 'images' | 'sizes' | 'colors'>[];
+      // Parse the products with JSON fields
+      const products = result.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        price: row.price,
+        category: row.category,
+        featured: row.featured,
+        inStock: row.inStock,
+        rating: row.rating,
+        reviewCount: row.reviewCount,
+        images: this.parseJsonField(row.images),
+        sizes: this.parseJsonField(row.sizes),
+        colors: this.parseJsonField(row.colors)
+      })) as ProductType[];
       
-      // For each product, get its images, sizes, and colors
-      const enhancedProducts = await Promise.all(
-        products.map(async (product) => {
-          // Get images
-          const imagesResult = await pglite.query(
-            'SELECT url FROM product_images WHERE product_id = $1',
-            [product.id]
-          );
-          const images = imagesResult.rows.map((row: any) => row.url);
-          
-          // Get sizes
-          const sizesResult = await pglite.query(
-            'SELECT size FROM product_sizes WHERE product_id = $1',
-            [product.id]
-          );
-          const sizes = sizesResult.rows.map((row: any) => row.size);
-          
-          // Get colors
-          const colorsResult = await pglite.query(
-            'SELECT color FROM product_colors WHERE product_id = $1',
-            [product.id]
-          );
-          const colors = colorsResult.rows.map((row: any) => row.color);
-          
-          // Return the complete product
-          return {
-            ...product,
-            images,
-            sizes,
-            colors
-          } as ProductType;
-        })
-      );
-      
-      return enhancedProducts;
+      return products;
     } catch (error) {
       console.error('Error getting all products:', error);
       throw error;
@@ -82,10 +65,10 @@ export class ProductRepository {
   async getProductById(id: string): Promise<ProductType | null> {
     try {
       const db = await getDB();
-      const pglite = await getPGClient();
+      const pgPool = await getPGClient();
       
-      // Get the basic product data
-      const result = await pglite.query(
+      // Get the product data
+      const result = await pgPool.query(
         `SELECT 
           id, 
           name, 
@@ -95,7 +78,10 @@ export class ProductRepository {
           featured, 
           in_stock as "inStock", 
           rating, 
-          review_count as "reviewCount"
+          review_count as "reviewCount",
+          images,
+          sizes,
+          colors
         FROM products 
         WHERE id = $1`,
         [id]
@@ -105,36 +91,25 @@ export class ProductRepository {
         return null;
       }
       
-      const product = result.rows[0] as Omit<ProductType, 'images' | 'sizes' | 'colors'>;
+      const row = result.rows[0];
       
-      // Get images
-      const imagesResult = await pglite.query(
-        'SELECT url FROM product_images WHERE product_id = $1',
-        [id]
-      );
-      const images = imagesResult.rows.map((row: any) => row.url);
-      
-      // Get sizes
-      const sizesResult = await pglite.query(
-        'SELECT size FROM product_sizes WHERE product_id = $1',
-        [id]
-      );
-      const sizes = sizesResult.rows.map((row: any) => row.size);
-      
-      // Get colors
-      const colorsResult = await pglite.query(
-        'SELECT color FROM product_colors WHERE product_id = $1',
-        [id]
-      );
-      const colors = colorsResult.rows.map((row: any) => row.color);
-      
-      // Return the complete product
-      return {
-        ...product,
-        images,
-        sizes,
-        colors
+      // Parse the product with JSON fields
+      const product = {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        price: row.price,
+        category: row.category,
+        featured: row.featured,
+        inStock: row.inStock,
+        rating: row.rating,
+        reviewCount: row.reviewCount,
+        images: this.parseJsonField(row.images),
+        sizes: this.parseJsonField(row.sizes),
+        colors: this.parseJsonField(row.colors)
       } as ProductType;
+      
+      return product;
     } catch (error) {
       console.error(`Error getting product with ID ${id}:`, error);
       throw error;
@@ -144,19 +119,21 @@ export class ProductRepository {
   // Insert sample data for testing
   async insertSampleData(products: ProductType[]): Promise<void> {
     try {
-      const pglite = await getPGClient();
+      const pgPool = await getPGClient();
       
       // Use a transaction to ensure all data is inserted or none
-      await pglite.exec('BEGIN');
+      const client = await pgPool.connect();
       
       try {
+        await client.query('BEGIN');
+        
         for (const product of products) {
-          // Insert the product
-          const result = await pglite.query(
+          // Insert the product with JSON fields
+          const result = await client.query(
             `INSERT INTO products 
-              (name, description, price, category, featured, in_stock, rating, review_count) 
+              (name, description, price, category, featured, in_stock, rating, review_count, images, sizes, colors) 
             VALUES 
-              ($1, $2, $3, $4, $5, $6, $7, $8) 
+              ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
             RETURNING id`,
             [
               product.name,
@@ -166,48 +143,43 @@ export class ProductRepository {
               product.featured,
               product.inStock,
               product.rating,
-              product.reviewCount
+              product.reviewCount,
+              JSON.stringify(product.images),
+              JSON.stringify(product.sizes || []),
+              JSON.stringify(product.colors || [])
             ]
           );
-          
-          const productId = (result.rows[0] as { id: number }).id;
-          
-          // Insert images
-          for (const imageUrl of product.images) {
-            await pglite.query(
-              'INSERT INTO product_images (product_id, url) VALUES ($1, $2)',
-              [productId, imageUrl]
-            );
-          }
-          
-          // Insert sizes
-          for (const size of product.sizes) {
-            await pglite.query(
-              'INSERT INTO product_sizes (product_id, size) VALUES ($1, $2)',
-              [productId, size]
-            );
-          }
-          
-          // Insert colors
-          for (const color of product.colors) {
-            await pglite.query(
-              'INSERT INTO product_colors (product_id, color) VALUES ($1, $2)',
-              [productId, color]
-            );
-          }
         }
         
         // Commit the transaction
-        await pglite.exec('COMMIT');
+        await client.query('COMMIT');
         console.log('Sample data inserted successfully');
       } catch (error) {
         // Rollback the transaction if any error occurs
-        await pglite.exec('ROLLBACK');
+        await client.query('ROLLBACK');
         throw error;
+      } finally {
+        // Release the client back to the pool
+        client.release();
       }
     } catch (error) {
       console.error('Error inserting sample data:', error);
       throw error;
+    }
+  }
+  
+  // Helper method to parse JSON fields
+  private parseJsonField(value: any): any[] {
+    if (!value) return [];
+    
+    try {
+      if (typeof value === 'string') {
+        return JSON.parse(value);
+      }
+      return value;
+    } catch (e) {
+      console.error('Error parsing JSON field:', e);
+      return [];
     }
   }
 }

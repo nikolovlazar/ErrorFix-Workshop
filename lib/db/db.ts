@@ -38,11 +38,13 @@ export async function initializeDb() {
   }
   
   try {
-    } catch (error) {
-      console.error('❌ Database initialization failed:', error);
-      throw error;
-    }
+    // Initialize the database using the server-side implementation
+    return await initDb();
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+    throw error;
   }
+}
 
 /**
  * Safe JSON parser for array fields stored as strings

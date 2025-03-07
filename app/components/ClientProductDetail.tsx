@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Product } from '@/types';
-import { getProductById, getAllProducts } from '@/lib/db/repositories/ProductRepository';
 import { ProductDetails } from '@/components/product-details';
 import { ProductRecommendations } from '@/components/product-recommendations';
 import { notFound } from 'next/navigation';
-import { DB_REFRESH_EVENT } from '@/components/footer'; // Import the event name
-
+import * as Sentry from '@sentry/nextjs';
 interface ClientProductDetailProps {
   productId: string;
 }
@@ -22,23 +20,35 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
   const loadProductData = async () => {
     try {
       setLoading(true);
-      console.log(`Loading product ${productId} from database...`);
+      console.log(`Loading product ${productId} from API...`);
       
-      // Fetch the product and all products for related items
-      const productData = await getProductById(productId);
+      // Fetch the specific product
+      const productResponse = await fetch(`/api/products/${productId}`);
       
-      if (!productData) {
-        notFound();
-        return;
+      if (!productResponse.ok) {
+        if (productResponse.status === 404) {
+          notFound();
+          return;
+        }
+        throw new Error(`API error: ${productResponse.status} ${productResponse.statusText}`);
       }
       
-      const allProducts = await getAllProducts();
+      const productData = await productResponse.json();
+      
+      // Fetch all products for related items
+      const allProductsResponse = await fetch('/api/products');
+      
+      if (!allProductsResponse.ok) {
+        throw new Error(`API error: ${allProductsResponse.status} ${allProductsResponse.statusText}`);
+      }
+      
+      const allProducts = await allProductsResponse.json();
       
       setProduct(productData);
       
       // Filter related products by category
       const related = allProducts
-        .filter(p => p.category === productData.category && p.id !== productData.id)
+        .filter((p: Product) => p.category === productData.category && p.id !== productData.id)
         .slice(0, 4);
         
       setRelatedProducts(related);
@@ -50,23 +60,8 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
     }
   };
 
-  // Load product data on initial mount or productId change
   useEffect(() => {
     loadProductData();
-  }, [productId]);
-
-  // Listen for refresh events
-  useEffect(() => {
-    const handleDatabaseRefresh = () => {
-      console.log('🔄 ClientProductDetail: Refreshing product data after DB reset');
-      loadProductData();
-    };
-
-    window.addEventListener(DB_REFRESH_EVENT, handleDatabaseRefresh);
-    
-    return () => {
-      window.removeEventListener(DB_REFRESH_EVENT, handleDatabaseRefresh);
-    };
   }, [productId]);
 
   if (loading) {
@@ -85,6 +80,9 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
   }
 
   if (error) {
+
+    // SENTRY-THIS: Cathing your exceptions!
+    //Sentry.captureException(error);
     return (
       <div className="container py-10">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -107,4 +105,4 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
       )}
     </div>
   );
-} 
+}

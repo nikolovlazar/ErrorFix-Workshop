@@ -1,12 +1,5 @@
-/**
- * FILE OVERVIEW:
- * Purpose: API endpoint for processing purchases
- * Key Concepts: Next.js API routes, payment processing, error handling, authentication
- * Module Type: API Route
- * @ai_context: Simulated purchase endpoint for testing purposes with authentication requirement
- */
-
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +11,11 @@ export async function POST(request: Request) {
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { 
+          error: 'Authentication required',
+          message: 'You must provide a valid authentication token',
+          code: 'AUTH_REQUIRED'
+        },
         { status: 401 }
       );
     }
@@ -27,21 +24,33 @@ export async function POST(request: Request) {
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Invalid authentication' },
+        { 
+          error: 'Invalid authentication',
+          message: 'The provided authentication token is invalid',
+          code: 'INVALID_TOKEN'
+        },
         { status: 401 }
       );
     }
     
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: 'No items in cart' },
+        { 
+          error: 'No items in cart',
+          message: 'Your cart is empty. Please add items before checkout',
+          code: 'EMPTY_CART'
+        },
         { status: 400 }
       );
     }
     
     if (!paymentDetails || !totalAmount) {
       return NextResponse.json(
-        { error: 'Missing payment details or total amount' },
+        { 
+          error: 'Missing payment details or total amount',
+          message: 'Payment details and total amount are required for checkout',
+          code: 'MISSING_PAYMENT_INFO'
+        },
         { status: 400 }
       );
     }
@@ -59,8 +68,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Purchase API error:', error);
+
+    // SENTRY-THIS: Cathing your exceptions!
+    // Sentry.captureException(error);
+
     return NextResponse.json(
-      { error: 'Payment processing failed' },
+      { 
+        error: 'Payment processing failed',
+        message: 'An error occurred while processing your payment',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+        code: 'PAYMENT_ERROR'
+      },
       { status: 500 }
     );
   }

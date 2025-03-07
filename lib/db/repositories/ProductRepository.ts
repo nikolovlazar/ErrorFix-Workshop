@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { getDB } from "../client";
+import { getDB, getPGClient } from "../client";
 import { Product } from "@/types";
 
 // Check if we're in a browser environment
@@ -8,116 +8,46 @@ const isBrowser = typeof window !== 'undefined';
 // Flag to disable mocks - set this to true to prevent using mock data as fallbacks
 const DISABLE_MOCK_FALLBACKS = true;
 
-// Mock products for server-side rendering or fallback
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "React Error Fixer Pro",
-    description: "Automatically fixes common React errors",
-    price: 99.99,
-    category: "JavaScript",
-    featured: true,
-    inStock: true,
-    rating: 4.8,
-    reviewCount: 120,
-    images: ["/images/products/product-1.jpg"],
-    sizes: ["Standard", "Enterprise"],
-    colors: ["Blue", "Green"]
-  },
-  {
-    id: "2",
-    name: "TypeScript Type Guard",
-    description: "Prevents type errors in your TypeScript code",
-    price: 79.99,
-    category: "TypeScript",
-    featured: true,
-    inStock: true,
-    rating: 4.5,
-    reviewCount: 98,
-    images: ["/images/products/product-2.jpg"],
-    sizes: ["Standard", "Enterprise"],
-    colors: ["Blue", "Red"]
-  },
-  {
-    id: "3",
-    name: "Next.js Router Resolver",
-    description: "Resolves navigation and routing issues in Next.js",
-    price: 89.99,
-    category: "Next.js",
-    featured: false,
-    inStock: true,
-    rating: 4.7,
-    reviewCount: 75,
-    images: ["/images/products/product-3.jpg"],
-    sizes: ["Standard", "Enterprise"],
-    colors: ["Purple", "Black"]
-  }
-];
-
 /**
- * Fetches all products from the database or returns mock data in server environment
+ * Fetches all products from the database or returns empty array in browser environment
  */
 export async function getAllProducts(): Promise<Product[]> {
   try {
-    // In server environment, return mock data only if not disabled
-    if (!isBrowser) {
-      console.log('Running in server environment, returning mock products');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts;
+    // In browser environment, we should use API endpoints
+    if (isBrowser) {
+      console.log('Running in browser environment, use API endpoints instead');
+      return [];
     }
     
     console.log('Fetching all products from database...');
     const db = await getDB();
+    const pgPool = await getPGClient();
     
-    if (!db) {
-      console.error('Database client is null');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts;
-    }
-    
-    // First check what tables and columns we actually have
-    try {
-      const tableInfo = await db.execute(sql`
-        SELECT column_name, data_type 
-        FROM information_schema.columns 
-        WHERE table_name = 'products'
-      `);
-      console.log('Products table structure:', tableInfo.rows);
-    } catch (infoError) {
-      console.error('Error fetching table structure:', infoError);
-    }
-    
-    // Try a simplified query first to see what we get
-    try {
-      const result = await db.execute(sql`SELECT * FROM products LIMIT 1`);
-      console.log('Raw product data sample:', result.rows[0]);
-    } catch (sampleError) {
-      console.error('Error fetching sample product:', sampleError);
-    }
-    
-    // Now perform the actual query
-    const result = await db.execute(sql`
+    // Now perform the query
+    const result = await pgPool.query(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock, rating, review_count,
+        featured, in_stock as "inStock", rating, review_count as "reviewCount",
         images, sizes, colors
       FROM products
     `);
     
     if (!result.rows || result.rows.length === 0) {
       console.log('No products found in database');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts;
+      return [];
     }
     
     // Parse JSON fields and transform to Product type
-    const products: Product[] = result.rows.map(row => ({
+    const products: Product[] = result.rows.map((row: any) => ({
       id: String(row.id),
       name: String(row.name),
       description: String(row.description),
       price: Number(row.price),
       category: String(row.category),
       featured: Boolean(row.featured),
-      inStock: Boolean(row.in_stock), // Map directly from db column name
+      inStock: Boolean(row.inStock),
       rating: Number(row.rating),
-      reviewCount: Number(row.review_count), // Map directly from db column name
+      reviewCount: Number(row.reviewCount),
       images: parseJsonField(row.images) as string[],
       sizes: parseJsonField(row.sizes) as string[],
       colors: parseJsonField(row.colors) as string[]
@@ -127,33 +57,29 @@ export async function getAllProducts(): Promise<Product[]> {
     return products;
   } catch (error) {
     console.error('Error fetching products from database:', error);
-    return DISABLE_MOCK_FALLBACKS ? [] : mockProducts;
+    return [];
   }
 }
 
 /**
- * Fetches featured products from the database or returns mock featured products in server environment
+ * Fetches featured products from the database
  */
 export async function getFeaturedProducts(): Promise<Product[]> {
   try {
-    // In server environment, return mock featured products
-    if (!isBrowser) {
-      console.log('Running in server environment, returning mock featured products');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts.filter(product => product.featured);
+    // In browser environment, we should use API endpoints
+    if (isBrowser) {
+      console.log('Running in browser environment, use API endpoints instead');
+      return [];
     }
     
     console.log('Fetching featured products from database...');
     const db = await getDB();
+    const pgPool = await getPGClient();
     
-    if (!db) {
-      console.error('Database client is null');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts.filter(product => product.featured);
-    }
-    
-    const result = await db.execute(sql`
+    const result = await pgPool.query(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock, rating, review_count,
+        featured, in_stock as "inStock", rating, review_count as "reviewCount",
         images, sizes, colors
       FROM products
       WHERE featured = true
@@ -161,20 +87,20 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     
     if (!result.rows || result.rows.length === 0) {
       console.log('No featured products found in database');
-      return DISABLE_MOCK_FALLBACKS ? [] : mockProducts.filter(product => product.featured);
+      return [];
     }
     
     // Parse JSON fields and transform to Product type
-    const products: Product[] = result.rows.map(row => ({
+    const products: Product[] = result.rows.map((row: any) => ({
       id: String(row.id),
       name: String(row.name),
       description: String(row.description),
       price: Number(row.price),
       category: String(row.category),
       featured: Boolean(row.featured),
-      inStock: Boolean(row.in_stock), // Map directly from db column name
+      inStock: Boolean(row.inStock),
       rating: Number(row.rating),
-      reviewCount: Number(row.review_count), // Map directly from db column name
+      reviewCount: Number(row.reviewCount),
       images: parseJsonField(row.images) as string[],
       sizes: parseJsonField(row.sizes) as string[],
       colors: parseJsonField(row.colors) as string[]
@@ -184,7 +110,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     return products;
   } catch (error) {
     console.error('Error fetching featured products from database:', error);
-    return DISABLE_MOCK_FALLBACKS ? [] : mockProducts.filter(product => product.featured);
+    return [];
   }
 }
 
@@ -206,42 +132,32 @@ function parseJsonField(jsonStr: any): any[] {
 }
 
 /**
- * Fetches a single product by ID from the database or returns mock product in server environment
+ * Fetches a single product by ID from the database
  */
 export async function getProductById(id: string): Promise<Product | null> {
   try {
-    // In server environment, return mock product by id
-    if (!isBrowser) {
-      console.log(`Running in server environment, returning mock product with ID ${id}`);
-      if (DISABLE_MOCK_FALLBACKS) return null;
-      const mockProduct = mockProducts.find(product => product.id === id);
-      return mockProduct || null;
+    // In browser environment, we should use API endpoints
+    if (isBrowser) {
+      console.log(`Running in browser environment, use API endpoints instead`);
+      return null;
     }
     
     console.log(`Fetching product with ID ${id} from database...`);
     const db = await getDB();
+    const pgPool = await getPGClient();
     
-    if (!db) {
-      console.error('Database client is null');
-      if (DISABLE_MOCK_FALLBACKS) return null;
-      const mockProduct = mockProducts.find(product => product.id === id);
-      return mockProduct || null;
-    }
-    
-    const result = await db.execute(sql`
+    const result = await pgPool.query(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock, rating, review_count,
+        featured, in_stock as "inStock", rating, review_count as "reviewCount",
         images, sizes, colors
       FROM products
-      WHERE id = ${id}
-    `);
+      WHERE id = $1
+    `, [id]);
     
     if (!result.rows || result.rows.length === 0) {
       console.log(`No product found with ID ${id}`);
-      if (DISABLE_MOCK_FALLBACKS) return null;
-      const mockProduct = mockProducts.find(product => product.id === id);
-      return mockProduct || null;
+      return null;
     }
     
     const row = result.rows[0];
@@ -254,9 +170,9 @@ export async function getProductById(id: string): Promise<Product | null> {
       price: Number(row.price),
       category: String(row.category),
       featured: Boolean(row.featured),
-      inStock: Boolean(row.in_stock), // Map directly from db column name
+      inStock: Boolean(row.inStock),
       rating: Number(row.rating),
-      reviewCount: Number(row.review_count), // Map directly from db column name
+      reviewCount: Number(row.reviewCount),
       images: parseJsonField(row.images) as string[],
       sizes: parseJsonField(row.sizes) as string[],
       colors: parseJsonField(row.colors) as string[]
@@ -266,8 +182,6 @@ export async function getProductById(id: string): Promise<Product | null> {
     return product;
   } catch (error) {
     console.error(`Error fetching product with ID ${id} from database:`, error);
-    if (DISABLE_MOCK_FALLBACKS) return null;
-    const mockProduct = mockProducts.find(product => product.id === id);
-    return mockProduct || null;
+    return null;
   }
-} 
+}

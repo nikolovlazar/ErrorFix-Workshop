@@ -4,7 +4,6 @@ import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { CartProvider } from '@/context/cart-context';
-import { CommandMenu } from '@/components/command-menu';
 import { Metadata } from 'next';
 import './globals.css';
 
@@ -29,7 +28,6 @@ export default function RootLayout({
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
-              <CommandMenu />
             </div>
             <Toaster />
           </CartProvider>

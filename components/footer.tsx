@@ -2,68 +2,8 @@
 
 import Link from 'next/link';
 import { Bug, Instagram, Twitter, Facebook } from 'lucide-react';
-import { DB_SEEDING_ENABLED_KEY } from '@/lib/db/migrations/001_seed_products';
-import { sql } from 'drizzle-orm';
-
-// Event name for database refresh
-export const DB_REFRESH_EVENT = 'database_refresh';
-
-// Function to dispatch database refresh event
-export function dispatchDatabaseRefreshEvent() {
-  if (typeof window !== 'undefined') {
-    const event = new CustomEvent(DB_REFRESH_EVENT);
-    window.dispatchEvent(event);
-    console.log('🔄 Dispatched DB_REFRESH_EVENT');
-  }
-}
 
 export default function Footer() {
-  const handleRefundPolicyClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    try {
-      console.log('🔄 Clearing database...');
-      
-      // First try the API route
-      try {
-        const response = await fetch('/api/db/reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        console.log('API response:', await response.json());
-      } catch (apiError) {
-        console.log('API route failed, falling back to client-side reset:', apiError);
-      }
-      
-      // Whether the API succeeded or failed, we'll also reset directly on the client
-      // This ensures the database is reset even if the API can't access it
-      try {
-        const { getDB } = await import('@/lib/db/client');
-        const db = await getDB();
-        
-        if (!db) {
-          console.error('Database client is null');
-          throw new Error('Database client is null');
-        }
-        
-        console.log('Executing DELETE FROM products');
-        await db.execute(sql`DELETE FROM "products"`);
-        console.log('✅ Database cleared successfully on client side');
-        
-        alert('Database cleared successfully. Seeding will depend on your command menu setting.');
-        
-        // Dispatch event to refresh product data
-        dispatchDatabaseRefreshEvent();
-      } catch (dbError) {
-        console.error('Error clearing database on client side:', dbError);
-        throw dbError;
-      }
-    } catch (error) {
-      console.error('❌ Error clearing database:', error);
-      alert(`Error clearing database: ${String(error)}`);
-    }
-  };
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -112,11 +52,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li>
-                <a href="#" onClick={handleRefundPolicyClick} className="text-gray-400 hover:text-white transition-colors">
-                  Refund Policy
-                </a>
-              </li>
+              <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Refund Policy</Link></li>
               <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Cookie Policy</Link></li>
             </ul>
           </div>

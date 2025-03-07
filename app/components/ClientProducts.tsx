@@ -2,34 +2,41 @@
 
 import { useEffect, useState } from 'react';
 import { Product } from '@/types';
-import { getAllProducts, getFeaturedProducts } from '@/lib/db/repositories/ProductRepository';
 import { ProductGrid } from '@/components/product-grid';
 import { FeaturedCollection } from '@/components/featured-collection';
 import { ProductGridSkeleton, FeaturedProductsSkeleton } from './ProductSkeleton';
-import { DB_REFRESH_EVENT } from '@/components/footer'; // Import the event name
-
+// import * as Sentry from '@sentry/nextjs';
 export function ClientProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to load products from the database
+  // Function to load products from the API
   const loadProducts = async () => {
     try {
       setLoading(true);
-      console.log('Loading products from database...');
+      console.log('Loading products from API...');
       
-      const [allProducts, featured] = await Promise.all([
-        getAllProducts(),
-        getFeaturedProducts()
-      ]);
+       // BREAK-THIS: Ha - I've sabotaged you with a bad API call
+      const response = await fetch('/api/product');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const allProducts = await response.json();
+      
+      // Filter featured products
+      const featured = allProducts.filter((product: Product) => product.featured);
       
       console.log(`Loaded ${allProducts.length} products, ${featured.length} featured products`);
       setProducts(allProducts);
       setFeaturedProducts(featured);
       setLoading(false);
     } catch (err) {
+      // SENTRY-THIS: Ha - I'm catching your expceptions!
+      // Sentry.captureException(err);
       console.error('Error loading products:', err);
       setError(`Failed to load products: ${String(err)}`);
       setLoading(false);
@@ -41,20 +48,7 @@ export function ClientProducts() {
     loadProducts();
   }, []);
 
-  // Listen for refresh events
-  useEffect(() => {
-    const handleDatabaseRefresh = () => {
-      console.log('🔄 ClientProducts: Refreshing product data after DB reset');
-      loadProducts();
-    };
-
-    window.addEventListener(DB_REFRESH_EVENT, handleDatabaseRefresh);
-    
-    return () => {
-      window.removeEventListener(DB_REFRESH_EVENT, handleDatabaseRefresh);
-    };
-  }, []);
-
+  
   if (error) {
     return (
       <div className="text-center py-10">
@@ -97,4 +91,4 @@ export function ClientProducts() {
       )}
     </>
   );
-} 
+}
