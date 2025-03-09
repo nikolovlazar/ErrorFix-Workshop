@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
     const { email, password } = body;
     
     // BREAK-THIS: Ha - I've sabotaged you with SLOW LOGINS
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 8000));
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -31,6 +32,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ user });
   } catch (error) {
     console.error('Login API error:', error);
+    
+    // Throw the error for standard error handling
+    throw error;
+    
     return NextResponse.json(
       { 
         error: 'Authentication failed',

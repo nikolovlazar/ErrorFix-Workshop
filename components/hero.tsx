@@ -46,12 +46,11 @@ export function Hero() {
               |
             </motion.span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl">
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 ma  x-w-xl">
             Because debugging is twice as hard as writing the code in the first place. Buy our premium error fixes and get back to building features instead of fixing bugs. Your git blame history will thank you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 text-white px-8 py-6 text-lg">
-              {/* BREAK-THIS by changing the link */}
               <Link href="/products/1">Fix Now</Link>
             </Button>
             <Button variant="outline" size="lg" className="border-red-600 text-red-500 hover:bg-red-600/10 px-8 py-6 text-lg">

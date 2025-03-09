@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
+// import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
@@ -71,6 +71,9 @@ export async function POST(request: Request) {
 
     // SENTRY-THIS: Cathing your exceptions!
     // Sentry.captureException(error);
+
+    // Throw the error for standard error handling
+    throw error;
 
     return NextResponse.json(
       { 

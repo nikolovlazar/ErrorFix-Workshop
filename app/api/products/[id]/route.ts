@@ -12,10 +12,8 @@ export async function GET(
   console.log(`🔍 API: Looking for product with ID ${id}`);
   
   try {
-    // Initialize the server-side database connection
     const { db } = await initDb();
     
-    // Use a more specific query with error handling for invalid IDs
     const numId = parseInt(id, 10);
     if (isNaN(numId)) {
       return NextResponse.json({ 
@@ -31,7 +29,6 @@ export async function GET(
     if (result.rows && result.rows.length > 0) {
       const row = result.rows[0];
       
-      // Parse JSON fields
       const product = {
         id: row.id,
         name: row.name,
@@ -50,7 +47,6 @@ export async function GET(
       return NextResponse.json(product);
     }
     
-    // If no product found in database, return 404 (removed fallback to static data)
     return NextResponse.json(
       { 
         error: `Product not found: ${id}`,
@@ -60,21 +56,12 @@ export async function GET(
       { status: 404 }
     );
   } catch (error) {
-    console.error(`API error for product ${id}:`, error);
+    console.error(`Loading error for product ${id}:`, error);
     
     // SENTRY-THIS: Cathing your exceptions!
     // Sentry.captureException(error);
 
-    // Return standardized error response with more details
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch product from database',
-        message: 'An error occurred while retrieving the product',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
-        code: 'DATABASE_ERROR'
-      },
-      { status: 500 }
-    );
+    throw error;
   }
 }
 
@@ -91,6 +78,8 @@ function parseJsonField(value: any): any[] {
     return value;
   } catch (e) {
     console.error('Error parsing JSON field:', e);
+    // Throw the error for standard error handling
+    throw e;
     return [];
   }
 }

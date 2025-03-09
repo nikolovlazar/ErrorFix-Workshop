@@ -16,7 +16,6 @@ export async function GET() {
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
     const result = await db.execute(sql`SELECT * FROM "product"`);
     
-    // Parse JSON fields in the result
     const products = result.rows.map((row: any) => ({
       id: row.id,
       name: row.name,
@@ -32,29 +31,27 @@ export async function GET() {
       colors: parseJsonField(row.colors)
     }));
     
-    // Return the products
     return NextResponse.json(products);
   } catch (error) {
     console.error('Error in products API route:', error);
     
-    // SENTRY-THIS: Cathing your exceptions!
+    // SENTRY-THIS: Catching your exceptions!
     // Sentry.captureException(error);
 
+    throw error;
+
     // Return standardized error response with more details
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch products from database',
-        message: 'An error occurred while retrieving products',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      },
-      { status: 500 }
-    );
+    // return NextResponse.json(
+    //   { 
+    //     error: 'Failed to fetch products from database',
+    //     message: 'An error occurred while retrieving products',
+    //     details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    //   },
+    //   { status: 500 }
+    // );
   }
 }
 
-/**
- * Helper function to parse JSON fields
- */
 function parseJsonField(value: any): any[] {
   if (!value) return [];
   
@@ -65,11 +62,11 @@ function parseJsonField(value: any): any[] {
     return value;
   } catch (e) {
     console.error('Error parsing JSON field:', e);
+    throw e;
     return [];
   }
 }
 
-// This is still needed for Next.js static generation
 export function generateStaticParams() {
   return [{}];
 }

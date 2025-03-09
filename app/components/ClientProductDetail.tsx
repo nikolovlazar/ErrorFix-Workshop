@@ -5,7 +5,7 @@ import { Product } from '@/types';
 import { ProductDetails } from '@/components/product-details';
 import { ProductRecommendations } from '@/components/product-recommendations';
 import { notFound } from 'next/navigation';
-import * as Sentry from '@sentry/nextjs';
+// import * as Sentry from '@sentry/nextjs';
 interface ClientProductDetailProps {
   productId: string;
 }
@@ -16,13 +16,11 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to load product data
   const loadProductData = async () => {
     try {
       setLoading(true);
       console.log(`Loading product ${productId} from API...`);
       
-      // Fetch the specific product
       const productResponse = await fetch(`/api/products/${productId}`);
       
       if (!productResponse.ok) {
@@ -30,6 +28,7 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
           notFound();
           return;
         }
+        // Sentry.captureException(new Error(`API error: ${productResponse.status} ${productResponse.statusText}`));
         throw new Error(`API error: ${productResponse.status} ${productResponse.statusText}`);
       }
       
@@ -39,6 +38,7 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
       const allProductsResponse = await fetch('/api/products');
       
       if (!allProductsResponse.ok) {
+        // Sentry.captureException(new Error(`API error: ${allProductsResponse.status} ${allProductsResponse.statusText}`));
         throw new Error(`API error: ${allProductsResponse.status} ${allProductsResponse.statusText}`);
       }
       
@@ -46,7 +46,6 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
       
       setProduct(productData);
       
-      // Filter related products by category
       const related = allProducts
         .filter((p: Product) => p.category === productData.category && p.id !== productData.id)
         .slice(0, 4);
@@ -57,6 +56,8 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
       console.error(`Error loading product ${productId}:`, err);
       setError(`Failed to load product: ${String(err)}`);
       setLoading(false);
+      // Sentry.captureException(err);
+      throw err;
     }
   };
 
@@ -80,9 +81,6 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
   }
 
   if (error) {
-
-    // SENTRY-THIS: Cathing your exceptions!
-    //Sentry.captureException(error);
     return (
       <div className="container py-10">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">

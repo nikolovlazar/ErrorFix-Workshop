@@ -40,6 +40,7 @@ export function ClientProducts() {
       console.error('Error loading products:', err);
       setError(`Failed to load products: ${String(err)}`);
       setLoading(false);
+      throw err;
     }
   };
 
@@ -76,7 +77,7 @@ export function ClientProducts() {
         <>
           <FeaturedCollection 
             title="Featured Error Fixes" 
-            description="Premium solutions for those pesky bugs that keep your PR queue backed up"
+            description="Good'ish solutions for those pesky bugs that keep your PR queue backed up"
             products={featuredProducts}
           />
           <div className="container">

@@ -15,7 +15,7 @@ export default function Footer() {
               <span className="text-xl font-bold">ErrorFix</span>
             </Link>
             <p className="text-gray-400 text-sm">
-              Premium solutions for your most frustrating development errors.
+              Good'ish solutions for your most frustrating development errors.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">

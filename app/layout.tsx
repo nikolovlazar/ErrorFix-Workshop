@@ -10,8 +10,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ErrorFix | Premium Solutions for Developer Nightmares',
-  description: 'Premium fixes for your most frustrating bugs and performance issues',
+  title: 'ErrorFix | Goodish Solutions for Developer Nightmares',
+  description: 'Because Code Breaks and Someone Has to Fix it ',
 };
 
 export default function RootLayout({
