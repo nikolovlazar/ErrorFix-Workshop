@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 
 // API validation configuration - this would typically be in a shared config
 const API_VALIDATION = {
