@@ -29,7 +29,7 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
           return;
         }
         // Sentry.captureException(new Error(`API error: ${productResponse.status} ${productResponse.statusText}`));
-        throw new Error(`API error: ${productResponse.status} ${productResponse.statusText}`);
+        throw new Error(`Unable to reach product api for ${productId}: ${productResponse.status} ${productResponse.statusText}`);
       }
       
       const productData = await productResponse.json();
@@ -39,7 +39,7 @@ export function ClientProductDetail({ productId }: ClientProductDetailProps) {
       
       if (!allProductsResponse.ok) {
         // Sentry.captureException(new Error(`API error: ${allProductsResponse.status} ${allProductsResponse.statusText}`));
-        throw new Error(`API error: ${allProductsResponse.status} ${allProductsResponse.statusText}`);
+        throw new Error(`Unable to reach product api for all products: ${allProductsResponse.status} ${allProductsResponse.statusText}`);
       }
       
       const allProducts = await allProductsResponse.json();

@@ -19,10 +19,10 @@ export function ClientProducts() {
       console.log('Loading products from API...');
       
        // BREAK-THIS: Ha - I've sabotaged you with a bad API call
-      const response = await fetch('/api/product');
+      const response = await fetch('/api/products');
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`API error with /api/product: ${response.status} ${response.statusText}`);
       }
       
       const allProducts = await response.json();

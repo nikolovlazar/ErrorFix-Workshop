@@ -61,7 +61,7 @@ export async function GET(
     // SENTRY-THIS: Cathing your exceptions!
     // Sentry.captureException(error);
 
-    throw error;
+    throw new Error(`Error retrieving product ${id} from the database: ${error}`);
   }
 }
 

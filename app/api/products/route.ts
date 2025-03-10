@@ -14,7 +14,7 @@ export async function GET() {
     const { db } = await initDb();
     
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
-    const result = await db.execute(sql`SELECT * FROM "product"`);
+    const result = await db.execute(sql`SELECT * FROM "products"`);
     
     const products = result.rows.map((row: any) => ({
       id: row.id,
@@ -39,16 +39,6 @@ export async function GET() {
     // Sentry.captureException(error);
 
     throw error;
-
-    // Return standardized error response with more details
-    // return NextResponse.json(
-    //   { 
-    //     error: 'Failed to fetch products from database',
-    //     message: 'An error occurred while retrieving products',
-    //     details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-    //   },
-    //   { status: 500 }
-    // );
   }
 }
 

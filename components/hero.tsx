@@ -46,7 +46,7 @@ export function Hero() {
               |
             </motion.span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 ma  x-w-xl">
+          <p className="text-lg md:text-xl w-1/2 text-muted-foreground mb-8 ma  x-w-xl">
             Because debugging is twice as hard as writing the code in the first place. Buy our premium error fixes and get back to building features instead of fixing bugs. Your git blame history will thank you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">

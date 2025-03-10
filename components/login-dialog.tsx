@@ -45,7 +45,16 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         onOpenChange(false);
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      // Capture the error with Sentry with enhanced context
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const isConfigError = errorMessage.includes('CONFIG_MISMATCH');
+    
+      // Provide a more helpful error message for configuration issues
+      if (isConfigError) {
+        setError('Authentication system configuration error. Please contact support.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);

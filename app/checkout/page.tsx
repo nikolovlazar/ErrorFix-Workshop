@@ -92,10 +92,22 @@ export default function CheckoutPage() {
     }
     
     // SENTRY-TEST-AREA: This function call can be modified to test Sentry error monitoring
+    // Add breadcrumb for checkout attempt
+    
+    // Sentry.addBreadcrumb({
+    //   category: 'checkout',
+    //   message: `Attempting checkout with ${items.length} items`,
+    //   level: 'info',
+    //   data: {
+    //     itemCount: items.length,
+    //     itemDetails: items.map(item => ({ id: item.id, name: item.name, price: item.price })),
+    //     totalAmount: totalPrice
+    //   }
+    // });
+    
     try {
       const result = await makePurchase({
         items,
-        paymentDetails: formData,
         totalAmount: totalPrice
       });
       
