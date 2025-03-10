@@ -14,7 +14,7 @@ export async function GET() {
     const { db } = await initDb();
     
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
-    const result = await db.execute(sql`SELECT * FROM "products"`);
+    const result = await db.execute(sql`SELECT * FROM "product"`);
     
     const products = result.rows.map((row: any) => ({
       id: row.id,
