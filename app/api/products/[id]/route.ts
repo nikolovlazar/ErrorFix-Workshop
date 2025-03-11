@@ -64,7 +64,14 @@ export async function GET(
     // SENTRY-THIS: Cathing your exceptions!
     // Sentry.captureException(error);
 
-    throw new Error(`Error retrieving product ${id} from the database: ${error}`);
+    return NextResponse.json(
+      {
+        error: `Error loading product ${id}: ${error}`,
+        message: 'An error occurred while fetching the product',
+        code: 'PRODUCT_LOAD_ERROR',
+      },
+      { status: 500 }
+    );
   }
 }
 

@@ -38,7 +38,13 @@ export async function GET() {
     // SENTRY-THIS: Catching your exceptions!
     // Sentry.captureException(error);
 
-    throw error;
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        message: 'An error occurred while fetching products',
+      },
+      { status: 500 }
+    );
   }
 }
 
