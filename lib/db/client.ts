@@ -1,4 +1,7 @@
 import * as schema from "./schema";
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import Database from 'better-sqlite3';
+import { join } from 'path';
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -16,8 +19,8 @@ const createMockDB = () => {
   };
 };
 
-// Only import node-postgres in server environment
-let pgPool: any;
+// Variables for database connection
+let dbConnection: any;
 let dbInitializationPromise: Promise<any> | null = null;
 let dbInitialized = false;
 let drizzleInstance: any;
@@ -25,9 +28,7 @@ let drizzleInstance: any;
 // Dynamic imports for server-side only
 if (!isBrowser) {
   // This code will only run on the server
-  import('drizzle-orm/node-postgres').then((drizzleModule) => {
-    drizzleInstance = drizzleModule.drizzle;
-  });
+  drizzleInstance = drizzle;
 }
 
 export const getDB = async () => {
@@ -47,25 +48,18 @@ export const getDB = async () => {
           dbInitialized = true;
           return mockDb;
         } else {
-          // Server/Node.js environment: Use real PostgreSQL connection
-          console.log('Initializing PostgreSQL connection in server environment');
+          // Server/Node.js environment: Use real SQLite connection
+          console.log('Initializing SQLite connection in server environment');
           
-          // Dynamically import pg in server environment
-          const { Pool } = await import('pg');
+          // Create SQLite database file path
+          const dbPath = join(process.cwd(), 'sqlite.db');
+          console.log(`SQLite database path: ${dbPath}`);
           
-          // Create PostgreSQL client
-          const connectionString = process.env.DATABASE_URL;
-          if (!connectionString) {
-            throw new Error('DATABASE_URL environment variable is not set');
-          }
-          
-          pgPool = new Pool({
-            connectionString,
-            ssl: { rejectUnauthorized: false }
-          });
+          // Create SQLite client
+          dbConnection = new Database(dbPath);
           
           // Initialize Drizzle ORM
-          const db = drizzleInstance(pgPool, { schema });
+          const db = drizzleInstance(dbConnection, { schema });
           
           console.log('✅ Server database initialization complete');
           dbInitialized = true;
@@ -82,16 +76,16 @@ export const getDB = async () => {
   return dbInitializationPromise;
 };
 
-export const getPGClient = async () => {
+export const getSQLiteConnection = async () => {
   if (isBrowser) {
-    console.log('Browser environment detected, no direct PostgreSQL client available');
+    console.log('Browser environment detected, no direct SQLite client available');
     return createMockDB();
   }
   
-  if (!pgPool) {
-    console.log('PostgreSQL client not initialized, initializing database...');
+  if (!dbConnection) {
+    console.log('SQLite client not initialized, initializing database...');
     await getDB();
   }
   
-  return pgPool;
+  return dbConnection;
 };

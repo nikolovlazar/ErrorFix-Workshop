@@ -1,12 +1,1 @@
-[
-  {
-    "name": "initial-schema",
-    "sql": "CREATE TABLE IF NOT EXISTS \"products\" (\"id\" SERIAL PRIMARY KEY, \"name\" TEXT NOT NULL, \"description\" TEXT NOT NULL, \"price\" DOUBLE PRECISION NOT NULL, \"category\" TEXT NOT NULL, \"featured\" BOOLEAN NOT NULL DEFAULT FALSE, \"in_stock\" BOOLEAN NOT NULL DEFAULT TRUE, \"rating\" DOUBLE PRECISION, \"review_count\" INTEGER DEFAULT 0, \"images\" JSONB NOT NULL DEFAULT '[]', \"sizes\" JSONB NOT NULL DEFAULT '[]', \"colors\" JSONB NOT NULL DEFAULT '[]');"
-  },
-  {
-    "name": "seed-products",
-    "type": "js",
-    "module": "./001_seed_products.ts",
-    "function": "seedProducts"
-  }
-]
+[]

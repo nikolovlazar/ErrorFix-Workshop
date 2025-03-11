@@ -1,13 +1,13 @@
 /**
  * FILE OVERVIEW:
- * Purpose: Provide data access methods for product-related operations using Drizzle ORM and PostgreSQL
- * Key Concepts: Repository pattern, Drizzle ORM, PostgreSQL, Data access layer
+ * Purpose: Provide data access methods for product-related operations using Drizzle ORM and SQLite
+ * Key Concepts: Repository pattern, Drizzle ORM, SQLite, Data access layer
  * Module Type: Repository
  * @ai_context: This file implements the repository pattern for product-related database operations
  */
 
 import { schema } from '../index';
-import { getDB, getPGClient } from '../client';
+import { getDB, getSQLiteConnection } from '../client';
 import { Product as ProductType } from '@/types';
 import { sql } from 'drizzle-orm';
 
@@ -17,10 +17,10 @@ export class ProductRepository {
   async getAllProducts(): Promise<ProductType[]> {
     try {
       const db = await getDB();
-      const pgPool = await getPGClient();
+      const sqliteDB = await getSQLiteConnection();
       
       // Using raw query for complex joins across multiple tables
-      const result = await pgPool.query(`
+      const result = sqliteDB.prepare(`
         SELECT 
           p.id, 
           p.name, 
@@ -28,25 +28,25 @@ export class ProductRepository {
           p.price, 
           p.category, 
           p.featured, 
-          p.in_stock as "inStock", 
+          p.in_stock as inStock, 
           p.rating, 
-          p.review_count as "reviewCount",
+          p.review_count as reviewCount,
           p.images,
           p.sizes,
           p.colors
         FROM products p
         ORDER BY p.id
-      `);
+      `).all();
       
       // Parse the products with JSON fields
-      const products = result.rows.map((row: any) => ({
+      const products = result.map((row: any) => ({
         id: row.id,
         name: row.name,
         description: row.description,
         price: row.price,
         category: row.category,
-        featured: row.featured,
-        inStock: row.inStock,
+        featured: Boolean(row.featured),
+        inStock: Boolean(row.inStock),
         rating: row.rating,
         reviewCount: row.reviewCount,
         images: this.parseJsonField(row.images),
@@ -65,10 +65,10 @@ export class ProductRepository {
   async getProductById(id: string): Promise<ProductType | null> {
     try {
       const db = await getDB();
-      const pgPool = await getPGClient();
+      const sqliteDB = await getSQLiteConnection();
       
       // Get the product data
-      const result = await pgPool.query(
+      const result = sqliteDB.prepare(
         `SELECT 
           id, 
           name, 
@@ -76,22 +76,21 @@ export class ProductRepository {
           price, 
           category, 
           featured, 
-          in_stock as "inStock", 
+          in_stock as inStock, 
           rating, 
-          review_count as "reviewCount",
+          review_count as reviewCount,
           images,
           sizes,
           colors
         FROM products 
-        WHERE id = $1`,
-        [id]
-      );
+        WHERE id = ?`
+      ).all(id);
       
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         return null;
       }
       
-      const row = result.rows[0];
+      const row = result[0];
       
       // Parse the product with JSON fields
       const product = {
@@ -100,8 +99,8 @@ export class ProductRepository {
         description: row.description,
         price: row.price,
         category: row.category,
-        featured: row.featured,
-        inStock: row.inStock,
+        featured: Boolean(row.featured),
+        inStock: Boolean(row.inStock),
         rating: row.rating,
         reviewCount: row.reviewCount,
         images: this.parseJsonField(row.images),
@@ -119,48 +118,44 @@ export class ProductRepository {
   // Insert sample data for testing
   async insertSampleData(products: ProductType[]): Promise<void> {
     try {
-      const pgPool = await getPGClient();
+      const sqliteDB = await getSQLiteConnection();
       
-      // Use a transaction to ensure all data is inserted or none
-      const client = await pgPool.connect();
+      // Begin transaction
+      sqliteDB.exec('BEGIN TRANSACTION');
       
       try {
-        await client.query('BEGIN');
+        // Prepare the insert statement
+        const stmt = sqliteDB.prepare(
+          `INSERT INTO products 
+            (name, description, price, category, featured, in_stock, rating, review_count, images, sizes, colors) 
+          VALUES 
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        );
         
         for (const product of products) {
           // Insert the product with JSON fields
-          const result = await client.query(
-            `INSERT INTO products 
-              (name, description, price, category, featured, in_stock, rating, review_count, images, sizes, colors) 
-            VALUES 
-              ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-            RETURNING id`,
-            [
-              product.name,
-              product.description,
-              product.price,
-              product.category,
-              product.featured,
-              product.inStock,
-              product.rating,
-              product.reviewCount,
-              JSON.stringify(product.images),
-              JSON.stringify(product.sizes || []),
-              JSON.stringify(product.colors || [])
-            ]
+          stmt.run(
+            product.name,
+            product.description,
+            product.price,
+            product.category,
+            product.featured ? 1 : 0,
+            product.inStock ? 1 : 0,
+            product.rating,
+            product.reviewCount,
+            JSON.stringify(product.images),
+            JSON.stringify(product.sizes || []),
+            JSON.stringify(product.colors || [])
           );
         }
         
         // Commit the transaction
-        await client.query('COMMIT');
+        sqliteDB.exec('COMMIT');
         console.log('Sample data inserted successfully');
       } catch (error) {
         // Rollback the transaction if any error occurs
-        await client.query('ROLLBACK');
+        sqliteDB.exec('ROLLBACK');
         throw error;
-      } finally {
-        // Release the client back to the pool
-        client.release();
       }
     } catch (error) {
       console.error('Error inserting sample data:', error);

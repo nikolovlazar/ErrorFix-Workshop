@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
-import { getDB, getPGClient } from "../client";
+import { getDB, getSQLiteConnection } from "../client";
 import { Product } from "@/types";
+import { products as productsSchema } from "../schema";
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -21,24 +22,24 @@ export async function getAllProducts(): Promise<Product[]> {
     
     console.log('Fetching all products from database...');
     const db = await getDB();
-    const pgPool = await getPGClient();
+    const sqliteDB = await getSQLiteConnection();
     
     // Now perform the query
-    const result = await pgPool.query(`
+    const result = sqliteDB.prepare(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock as "inStock", rating, review_count as "reviewCount",
+        featured, in_stock as inStock, rating, review_count as reviewCount,
         images, sizes, colors
       FROM products
-    `);
+    `).all();
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!result || result.length === 0) {
       console.log('No products found in database');
       return [];
     }
     
     // Parse JSON fields and transform to Product type
-    const products: Product[] = result.rows.map((row: any) => ({
+    const products: Product[] = result.map((row: any) => ({
       id: String(row.id),
       name: String(row.name),
       description: String(row.description),
@@ -74,24 +75,24 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     
     console.log('Fetching featured products from database...');
     const db = await getDB();
-    const pgPool = await getPGClient();
+    const sqliteDB = await getSQLiteConnection();
     
-    const result = await pgPool.query(`
+    const result = sqliteDB.prepare(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock as "inStock", rating, review_count as "reviewCount",
+        featured, in_stock as inStock, rating, review_count as reviewCount,
         images, sizes, colors
       FROM products
-      WHERE featured = true
-    `);
+      WHERE featured = 1
+    `).all();
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!result || result.length === 0) {
       console.log('No featured products found in database');
       return [];
     }
     
     // Parse JSON fields and transform to Product type
-    const products: Product[] = result.rows.map((row: any) => ({
+    const products: Product[] = result.map((row: any) => ({
       id: String(row.id),
       name: String(row.name),
       description: String(row.description),
@@ -144,23 +145,23 @@ export async function getProductById(id: string): Promise<Product | null> {
     
     console.log(`Fetching product with ID ${id} from database...`);
     const db = await getDB();
-    const pgPool = await getPGClient();
+    const sqliteDB = await getSQLiteConnection();
     
-    const result = await pgPool.query(`
+    const result = sqliteDB.prepare(`
       SELECT 
         id, name, description, price, category, 
-        featured, in_stock as "inStock", rating, review_count as "reviewCount",
+        featured, in_stock as inStock, rating, review_count as reviewCount,
         images, sizes, colors
       FROM products
-      WHERE id = $1
-    `, [id]);
+      WHERE id = ?
+    `).all(id);
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!result || result.length === 0) {
       console.log(`No product found with ID ${id}`);
       return null;
     }
     
-    const row = result.rows[0];
+    const row = result[0];
     
     // Parse JSON fields and transform to Product type
     const product: Product = {

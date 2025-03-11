@@ -1,15 +1,16 @@
 /**
  * FILE OVERVIEW:
  * Purpose: SERVER-ONLY database initialization and management 
- * Key Concepts: PostgreSQL, Drizzle ORM, Node.js
+ * Key Concepts: SQLite, Drizzle ORM, Node.js
  * Module Type: Server Service
  * @ai_context: This module sets up database connections for server environments only
  */
 
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { sql } from 'drizzle-orm';
 import * as schema from './schema';
-import { Pool } from 'pg';
+import Database from 'better-sqlite3';
+import { join } from 'path';
 import { products as importedProducts } from '@/lib/data';
 
 // Product type definition - shared with client
@@ -57,8 +58,8 @@ async function seedProducts(dbInstance: any) {
   
   try {
     // Check if products table has any rows
-    const result = await dbInstance.execute(sql`SELECT COUNT(*) as count FROM products`);
-    const count = parseInt(result[0].count);
+    const result = dbInstance.select({ count: sql`count(*)` }).from(schema.products).all();
+    const count = parseInt(result[0]?.count?.toString() || '0');
     console.log(`✅ Server: Found ${count} existing products`);
     
     if (count === 0) {
@@ -67,28 +68,23 @@ async function seedProducts(dbInstance: any) {
       // Use imported products from data.ts
       const products = importedProducts;
       
-      // Insert each product using SQL template literals
+      // Insert each product
       for (const product of products) {
-        // Convert array fields to JSON strings for storage
-        await dbInstance.execute(sql`
-          INSERT INTO products (
-            id, name, description, price, category, featured, "inStock", rating, "reviewCount",
-            images, sizes, colors
-          ) VALUES (
-            ${product.id}, 
-            ${product.name}, 
-            ${product.description}, 
-            ${product.price}, 
-            ${product.category}, 
-            ${product.featured}, 
-            ${product.inStock}, 
-            ${product.rating}, 
-            ${product.reviewCount},
-            ${JSON.stringify(product.images)}, 
-            ${JSON.stringify(product.sizes || [])}, 
-            ${JSON.stringify(product.colors || [])}
-          )
-        `);
+        // Insert products with proper JSON conversion
+        dbInstance.insert(schema.products).values({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          category: product.category,
+          featured: product.featured,
+          inStock: product.inStock,
+          rating: product.rating,
+          reviewCount: product.reviewCount,
+          images: JSON.stringify(product.images),
+          sizes: JSON.stringify(product.sizes || []),
+          colors: JSON.stringify(product.colors || [])
+        }).run();
       }
       
       console.log(`✅ Server: Seeded ${products.length} products`);
@@ -102,29 +98,54 @@ async function seedProducts(dbInstance: any) {
 /**
  * Apply migrations to set up database schema
  */
-async function applyMigrations(dbInstance: any) {
+async function applyMigrations(dbInstance: any, sqliteDB: any) {
   try {
-    // Import migrations directly
-    const migrationsModule = await import('./migrations/export.json');
-    const migrations = migrationsModule.default;
+    // Create tables manually using schema definition
+    const sqlSchema = `
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        price REAL NOT NULL,
+        category TEXT NOT NULL,
+        featured INTEGER NOT NULL DEFAULT 0,
+        in_stock INTEGER NOT NULL DEFAULT 1,
+        rating REAL,
+        review_count INTEGER DEFAULT 0,
+        images TEXT NOT NULL DEFAULT '[]',
+        sizes TEXT NOT NULL DEFAULT '[]',
+        colors TEXT NOT NULL DEFAULT '[]'
+      );
+      
+      CREATE TABLE IF NOT EXISTS product_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        url TEXT NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+      
+      CREATE TABLE IF NOT EXISTS product_sizes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        size TEXT NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+      
+      CREATE TABLE IF NOT EXISTS product_colors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        color TEXT NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+    `;
     
-    // Check if migrations have the expected format
-    if (Array.isArray(migrations)) {
-      // Apply migrations manually using SQL
-      for (const migration of migrations) {
-        await dbInstance.execute(sql.raw(migration.sql || ''));
-      }
-      console.log('✅ Server: Applied migrations');
-    } else {
-      throw new Error('Invalid migrations format');
-    }
+    // Execute the schema creation
+    sqliteDB.exec(sqlSchema);
+    console.log('✅ Server: Applied migrations');
     
     // Log created tables
-    const tables = await dbInstance.execute(sql`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
-    console.log('📊 Server: Tables in database:', tables.map((row: any) => row.table_name));
+    const tables = sqliteDB.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    console.log('📊 Server: Tables in database:', tables.map((row: any) => row.name));
   } catch (error) {
     console.error('❌ Server: Error applying migrations:', error);
     throw error;
@@ -139,24 +160,23 @@ export async function initDb() {
   try {
     console.log('🔄 Server: Initializing database');
     
-    // Get database connection string from environment variables
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('DATABASE_URL environment variable is not set');
-    }
+    // Create SQLite database file path
+    const dbPath = join(process.cwd(), 'sqlite.db');
+    console.log(`SQLite database path: ${dbPath}`);
     
-    // Initialize PostgreSQL connection pool
-    const pgPool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false }
-    });
-    console.log('✅ Server: PostgreSQL connection pool initialized');
+    // Initialize SQLite database connection
+    const sqliteDB = new Database(dbPath);
+    console.log('✅ Server: SQLite connection initialized');
     
     // Initialize Drizzle ORM
-    const dbInstance = drizzle(pgPool, { schema });
+    const dbInstance = drizzle(sqliteDB, { schema });
     console.log('✅ Server: Drizzle ORM initialized with schema');
     
-    return { db: dbInstance, pg: pgPool };
+    // Apply migrations and seed data
+    await applyMigrations(dbInstance, sqliteDB);
+    await seedProducts(dbInstance);
+    
+    return { db: dbInstance, sqlite: sqliteDB };
   } catch (error) {
     console.error('❌ Server: Database initialization failed:', error);
     throw error;
