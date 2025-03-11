@@ -15,33 +15,42 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log(request)
 
-    const { items, paymentDetails, totalAmount } = body;
+    const { cartItems, paymentDetails, totalAmount } = body;
 
     const authHeader = request.headers.get('authorization');
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({
+        error: 'Authentication required',
+        message: 'An error occurred while processing your payment',
+        details: process.env.NODE_ENV === 'development' ? 'Authentication required' : undefined,
+        code: 'PAYMENT_ERROR'
+      },
+      { status: 500 }
+    );
+  }
 
-
-      throw new Error('Authentication required');
-    }
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-
-
-
-      throw new Error('No items in cart');
-    }
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return NextResponse.json({
+        error: 'No items in cart',
+        message: 'An error occurred while processing your payment',
+        details: process.env.NODE_ENV === 'development' ? 'No items in cart' : undefined,
+        code: 'PAYMENT_ERROR'
+      },
+      { status: 500 }
+    );
+  }
 
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const transactionId = Math.random().toString(36).substring(2, 15);
-
 
     return NextResponse.json({
       success: true,
       transactionId,
       timestamp: new Date().toISOString(),
       amount: totalAmount,
-      itemCount: items.length
+      itemCount: cartItems.length
     });
   } catch (error) {
     console.error('Purchase API error:', error);
