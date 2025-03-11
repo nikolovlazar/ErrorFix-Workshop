@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log(request)
 
-    const { cartItems, paymentDetails, totalAmount } = body;
+    const { cartItems, totalAmount } = body;
 
     const authHeader = request.headers.get('authorization');
 
