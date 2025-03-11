@@ -36,33 +36,13 @@ export async function initializeDb() {
     console.error('❌ Database initialization attempted in client environment');
     throw new Error('Database can only be initialized on the server');
   }
-  
+
   try {
     // Initialize the database using the server-side implementation
     return await initDb();
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
-  }
-}
-
-/**
- * Safe JSON parser for array fields stored as strings
- */
-export function safeJsonParse<T>(value: string | null | undefined | T): T {
-  if (value === null || value === undefined) {
-    return [] as unknown as T;
-  }
-  
-  if (typeof value !== 'string') {
-    return value;
-  }
-  
-  try {
-    return JSON.parse(value) as T;
-  } catch (e) {
-    console.warn('Failed to parse JSON:', e);
-    return [] as unknown as T;
   }
 }
 

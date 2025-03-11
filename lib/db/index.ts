@@ -7,20 +7,15 @@
  */
 
 // Import and re-export database functionality from the server-side implementation
-import { initializeDb, safeJsonParse, type Product } from './db';
+import { initializeDb, type Product } from './db';
 import * as schema from './schema';
 
 // Re-export for use in other files
-export {
-  initializeDb,
-  safeJsonParse,
-  schema
-};
+export { initializeDb, schema };
 
 // Re-export types
 export type { Product };
 
 // Re-export server implementation types and functions if needed
-export type { 
-  // Add any specific types you need to export here
-}
+export // Add any specific types you need to export here
+ type {};

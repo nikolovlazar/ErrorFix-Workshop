@@ -1,92 +1,53 @@
-/**
- * Script to seed the SQLite database with initial data
- */
+import { sql } from 'drizzle-orm';
+import { initializeDb, schema } from '../lib/db';
+import { products as importedProducts } from '@/lib/data';
 
-import Database from 'better-sqlite3';
-import { join } from 'path';
-import { products as importedProducts } from '../lib/data';
+async function main() {
+  const { db } = await initializeDb();
 
-// Get database path
-const dbPath = join(process.cwd(), 'sqlite.db');
-console.log(`SQLite database path: ${dbPath}`);
+  console.log('⏳ Server: Checking if products need to be seeded...');
 
-async function seedDatabase() {
-  console.log('Seeding database...');
-  
   try {
-    // Connect to SQLite database
-    const db = new Database(dbPath);
-    console.log('Connected to SQLite database');
-    
-    // Check if products table exists
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='products'").get();
-    
-    if (!tableExists) {
-      console.error('Products table does not exist. Run migrations first.');
-      process.exit(1);
-    }
-    
     // Check if products table has any rows
-    const result = db.prepare('SELECT COUNT(*) as count FROM products').get();
-    const count = parseInt((result as any).count);
-    console.log(`Found ${count} existing products`);
-    
-    if (count > 0) {
-      console.log('Database already has products, skipping seed');
-      db.close();
-      return;
-    }
-    
-    console.log('Seeding products table...');
-    
-    // Begin transaction
-    db.exec('BEGIN TRANSACTION');
-    
-    try {
-      // Prepare insert statement
-      const insertStmt = db.prepare(`
-        INSERT INTO products (
-          id, name, description, price, category, featured, in_stock, rating, review_count,
-          images, sizes, colors
-        ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        )
-      `);
-      
+    const result = await db
+      .select({ count: sql`count(*)` })
+      .from(schema.products)
+      .all();
+    const count = parseInt(result[0]?.count?.toString() || '0');
+    console.log(`✅ Server: Found ${count} existing products`);
+
+    if (count === 0) {
+      console.log('🌱 Server: Seeding products table...');
+
+      // Use imported products from data.ts
+      const products = importedProducts;
+
       // Insert each product
-      for (const product of importedProducts) {
-        insertStmt.run(
-          product.id, 
-          product.name, 
-          product.description, 
-          product.price, 
-          product.category, 
-          product.featured ? 1 : 0, 
-          product.inStock ? 1 : 0, 
-          product.rating, 
-          product.reviewCount,
-          JSON.stringify(product.images), 
-          JSON.stringify(product.sizes || []), 
-          JSON.stringify(product.colors || [])
-        );
+      for (const product of products) {
+        // Insert products with proper JSON conversion
+        db.insert(schema.products)
+          .values({
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            category: product.category,
+            featured: product.featured,
+            inStock: product.inStock,
+            rating: product.rating,
+            reviewCount: product.reviewCount,
+            images: product.images,
+            sizes: product.sizes,
+            colors: product.colors,
+          })
+          .run();
       }
-      
-      // Commit transaction
-      db.exec('COMMIT');
-      console.log(`✅ Seeded ${importedProducts.length} products`);
-    } catch (error) {
-      // Rollback transaction on error
-      db.exec('ROLLBACK');
-      console.error('❌ Error seeding products:', error);
-      throw error;
+
+      console.log(`✅ Server: Seeded ${products.length} products`);
     }
-    
-    // Close database connection
-    db.close();
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
-    process.exit(1);
+    console.error('❌ Server: Error seeding products:', error);
+    throw error;
   }
 }
 
-seedDatabase();
+main();

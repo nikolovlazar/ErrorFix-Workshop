@@ -1,6 +1,6 @@
-import * as schema from "./schema";
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import * as schema from './schema';
+import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
 import { join } from 'path';
 
 // Check if we're in a browser environment
@@ -9,7 +9,7 @@ const isBrowser = typeof window !== 'undefined';
 // Create a mock DB interface for browser environment
 const createMockDB = () => {
   console.log('Creating mock database interface for browser environment');
-  
+
   return {
     execute: async () => {
       console.log('Mock DB execute called in browser environment');
@@ -36,7 +36,7 @@ export const getDB = async () => {
     console.log('Database already initialized, reusing existing connection');
     return dbInitializationPromise;
   }
-  
+
   if (!dbInitializationPromise) {
     console.log('Starting database initialization...');
     dbInitializationPromise = (async () => {
@@ -50,17 +50,13 @@ export const getDB = async () => {
         } else {
           // Server/Node.js environment: Use real SQLite connection
           console.log('Initializing SQLite connection in server environment');
-          
-          // Create SQLite database file path
-          const dbPath = join(process.cwd(), 'sqlite.db');
-          console.log(`SQLite database path: ${dbPath}`);
-          
+
           // Create SQLite client
-          dbConnection = new Database(dbPath);
-          
+          const client = createClient({ url: 'file:./sqlite.db' });
+
           // Initialize Drizzle ORM
-          const db = drizzleInstance(dbConnection, { schema });
-          
+          const db = drizzleInstance(client, { schema });
+
           console.log('✅ Server database initialization complete');
           dbInitialized = true;
           return db;
@@ -78,14 +74,16 @@ export const getDB = async () => {
 
 export const getSQLiteConnection = async () => {
   if (isBrowser) {
-    console.log('Browser environment detected, no direct SQLite client available');
+    console.log(
+      'Browser environment detected, no direct SQLite client available'
+    );
     return createMockDB();
   }
-  
+
   if (!dbConnection) {
     console.log('SQLite client not initialized, initializing database...');
     await getDB();
   }
-  
+
   return dbConnection;
 };
