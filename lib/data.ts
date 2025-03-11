@@ -2,10 +2,9 @@ import { Product } from '@/types';
 
 export const products: Product[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Hydration Mismatch Resolver Pro',
-    description:
-      'Tired of "Text content did not match server-rendered HTML" errors ruining your React app? Our Hydration Mismatch Resolver Pro uses quantum entanglement to ensure your server and client renders are perfectly synchronized. Includes a free "Warning: Expected server HTML to contain a matching div" suppressor. Side effects may include slightly delayed initial renders and occasional déjà vu.',
+    description: 'Tired of "Text content did not match server-rendered HTML" errors ruining your React app? Our Hydration Mismatch Resolver Pro uses quantum entanglement to ensure your server and client renders are perfectly synchronized. Includes a free "Warning: Expected server HTML to contain a matching div" suppressor. Side effects may include slightly delayed initial renders and occasional déjà vu.',
     price: 1899.99,
     images: [
       'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -20,10 +19,9 @@ export const products: Product[] = [
     reviewCount: 124,
   },
   {
-    id: 2,
+    id: '2',
     name: '502 Bad Gateway Exorcist',
-    description:
-      'Banish those demonic 502 errors to the shadow realm! Our Bad Gateway Exorcist performs a ritual cleansing of your load balancers, proxy servers, and API gateways. Comes with a sacred "Connection Reset by Peer" amulet and a vial of holy water for emergency nginx restarts. Warning: May cause servers to speak in tongues temporarily.',
+    description: 'Banish those demonic 502 errors to the shadow realm! Our Bad Gateway Exorcist performs a ritual cleansing of your load balancers, proxy servers, and API gateways. Comes with a sacred "Connection Reset by Peer" amulet and a vial of holy water for emergency nginx restarts. Warning: May cause servers to speak in tongues temporarily.',
     price: 2349.99,
     images: [
       'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -38,10 +36,9 @@ export const products: Product[] = [
     reviewCount: 87,
   },
   {
-    id: 3,
+    id: '3',
     name: 'SQL Query Optimizer 9000',
-    description:
-      'Transform your database from a sloth to a cheetah! Our SQL Query Optimizer 9000 analyzes your most horrific queries and performs dark magic to make them blazing fast. Includes automatic index suggestion, query rewriting, and a complimentary "SELECT * FROM bad_practices WHERE developer = YOU" report. Guaranteed to reduce your DBA\'s blood pressure by 30%.',
+    description: 'Transform your database from a sloth to a cheetah! Our SQL Query Optimizer 9000 analyzes your most horrific queries and performs dark magic to make them blazing fast. Includes automatic index suggestion, query rewriting, and a complimentary "SELECT * FROM bad_practices WHERE developer = YOU" report. Guaranteed to reduce your DBA\'s blood pressure by 30%.',
     price: 3299.99,
     images: [
       'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -56,10 +53,9 @@ export const products: Product[] = [
     reviewCount: 215,
   },
   {
-    id: 4,
+    id: '4',
     name: 'N+1 Query Terminator',
-    description:
-      'Stop your ORM from firing 10,000 queries to load a single page! Our N+1 Query Terminator hunts down and eliminates inefficient database access patterns with extreme prejudice. Features eager loading enforcement, relationship preloading, and a stern lecture for your junior developers. Comes with a "I\'ll be back... with better queries" t-shirt.',
+    description: 'Stop your ORM from firing 10,000 queries to load a single page! Our N+1 Query Terminator hunts down and eliminates inefficient database access patterns with extreme prejudice. Features eager loading enforcement, relationship preloading, and a stern lecture for your junior developers. Comes with a "I\'ll be back... with better queries" t-shirt.',
     price: 2499.99,
     images: [
       'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -74,10 +70,9 @@ export const products: Product[] = [
     reviewCount: 178,
   },
   {
-    id: 5,
+    id: '5',
     name: 'Downtime Defender Shield',
-    description:
-      'Achieve that mythical "five nines" uptime with our Downtime Defender Shield! Creates an impenetrable barrier around your production environment, protecting it from random AWS outages, accidental kubectl deletes, and "just pushing this small change on Friday" syndrome. Includes automatic failover, disaster recovery, and a direct hotline to your CEO to explain why the site is still down.',
+    description: 'Achieve that mythical "five nines" uptime with our Downtime Defender Shield! Creates an impenetrable barrier around your production environment, protecting it from random AWS outages, accidental kubectl deletes, and "just pushing this small change on Friday" syndrome. Includes automatic failover, disaster recovery, and a direct hotline to your CEO to explain why the site is still down.',
     price: 4999.99,
     images: [
       'https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -92,10 +87,9 @@ export const products: Product[] = [
     reviewCount: 64,
   },
   {
-    id: 6,
+    id: '6',
     name: 'Dependency Hell Escape Ladder',
-    description:
-      'Climb out of dependency hell with our sturdy Escape Ladder. Untangle your package.json, resolve version conflicts, and eliminate those circular dependencies. Comes with a free "node_modules black hole detector" and a shoulder to cry on when npm install fails for the 100th time.',
+    description: 'Climb out of dependency hell with our sturdy Escape Ladder. Untangle your package.json, resolve version conflicts, and eliminate those circular dependencies. Comes with a free "node_modules black hole detector" and a shoulder to cry on when npm install fails for the 100th time.',
     price: 899.99,
     images: [
       'https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -110,10 +104,9 @@ export const products: Product[] = [
     reviewCount: 92,
   },
   {
-    id: 7,
+    id: '7',
     name: 'Database Connection Pooling Lifeguard',
-    description:
-      "Stop your database connections from drowning in a sea of requests! Our Connection Pooling Lifeguard monitors your connection pool, rescues zombie connections, and performs CPR on your database when it's gasping for resources. Includes waterproof connection management, leak detection, and a stylish red swimsuit for your database administrator.",
+    description: 'Stop your database connections from drowning in a sea of requests! Our Connection Pooling Lifeguard monitors your connection pool, rescues zombie connections, and performs CPR on your database when it\'s gasping for resources. Includes waterproof connection management, leak detection, and a stylish red swimsuit for your database administrator.',
     price: 1789.99,
     images: [
       'https://images.unsplash.com/photo-1607798748738-b15c40d33d57?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
@@ -128,10 +121,9 @@ export const products: Product[] = [
     reviewCount: 156,
   },
   {
-    id: 8,
+    id: '8',
     name: 'Unhandled Exception Detection',
-    description:
-      'Catch those sneaky unhandled exceptions before they wreak havoc on your application! Our Exception Detection system proactively identifies potential runtime errors and adds robust error boundaries to prevent catastrophic failures. Includes exception tracking, automated error reporting, and an emergency "exception quarantine" system that isolates problematic code while keeping the rest of your application running smoothly.',
+    description: 'Catch those sneaky unhandled exceptions before they wreak havoc on your application! Our Exception Detection system proactively identifies potential runtime errors and adds robust error boundaries to prevent catastrophic failures. Includes exception tracking, automated error reporting, and an emergency "exception quarantine" system that isolates problematic code while keeping the rest of your application running smoothly.',
     price: 2999.99,
     images: [
       'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
