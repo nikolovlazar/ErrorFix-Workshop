@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import * as Sentry from '@sentry/nextjs';
 
 export interface User {
   id: string;
@@ -61,9 +60,6 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (!response.ok) {
-            Sentry.captureMessage(
-              'Authentication failed. Please check your credentials and try again.'
-            );
             return {
               success: false,
               error: 'Authentication failed. Please check your credentials and try again.'
@@ -83,7 +79,6 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('Login error:', error);
-          Sentry.captureException(error);
           return {
             success: false,
             error: 'An error occurred during login. Please try again later.'

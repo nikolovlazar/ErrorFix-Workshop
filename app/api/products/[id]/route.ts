@@ -27,7 +27,7 @@ export async function GET(
     }
     
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
-    const result = await db.all(sql`SELECT * FROM product WHERE id = ${numId}`);
+    const result = await db.all(sql`SELECT * FROM products WHERE id = ${numId}`);
     
     if (result && result.length > 0) {
       const row = result[0];
