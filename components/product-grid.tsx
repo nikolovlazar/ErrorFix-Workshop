@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Product } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +14,7 @@ export function ProductGrid({ products }: ProductGridProps) {
         <Link key={product.id} href={`/products/${product.id}`} className="group">
           <Card className="overflow-hidden border-0 bg-gray-800 transition-all hover:shadow-lg hover:shadow-red-500/20">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-700">
-              <Image
+              <img
                 src={product.images[0]}
                 alt={product.name}
                 width={500}
@@ -33,7 +32,7 @@ export function ProductGrid({ products }: ProductGridProps) {
                 <p className="font-medium text-red-500">${product.price.toFixed(2)}</p>
                 <div className="flex items-center">
                   <span className="text-sm text-yellow-500 mr-1">★</span>
-                  <span className="text-sm text-muted-foreground">{product.rating}</span>
+                  <span className="text-sm text-muted-foreground">{product.rating.toFixed(1)}</span>
                 </div>
               </div>
             </CardContent>

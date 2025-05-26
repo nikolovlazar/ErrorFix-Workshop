@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,7 +16,7 @@ interface CartModalProps {
 
 export function CartModal({ open, onClose }: CartModalProps) {
   const { items, removeItem, updateQuantity, totalPrice } = useCart();
-  
+
   // Close the modal when pressing escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -25,11 +24,11 @@ export function CartModal({ open, onClose }: CartModalProps) {
         onClose();
       }
     };
-    
+
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
-  
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-md flex flex-col">
@@ -39,7 +38,7 @@ export function CartModal({ open, onClose }: CartModalProps) {
             Your Cart ({items.length})
           </SheetTitle>
         </SheetHeader>
-        
+
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 py-12">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -55,7 +54,7 @@ export function CartModal({ open, onClose }: CartModalProps) {
                 {items.map((item) => (
                   <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}`} className="flex gap-4">
                     <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                      <Image
+                      <img
                         src={item.image}
                         alt={item.name}
                         width={80}
@@ -103,7 +102,7 @@ export function CartModal({ open, onClose }: CartModalProps) {
                 ))}
               </div>
             </ScrollArea>
-            
+
             <div className="border-t pt-4">
               <div className="space-y-1.5 mb-4">
                 <div className="flex justify-between">
@@ -120,7 +119,7 @@ export function CartModal({ open, onClose }: CartModalProps) {
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
               </div>
-              
+
               <SheetFooter className="flex flex-col gap-2 sm:flex-col">
                 <Button asChild size="lg" className="w-full bg-red-600 hover:bg-red-700 text-white">
                   <Link href="/checkout" onClick={onClose}>

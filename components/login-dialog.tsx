@@ -22,23 +22,21 @@ interface LoginDialogProps {
 }
 
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@admin.com');
+  const [password, setPassword] = useState('password');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const login = useAuthStore(state => state.login);
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      // SENTRY-TEST-AREA: This function call can be modified to test Sentry error monitoring
       const result = await login(email, password);
-      
+
       if (!result.success) {
         setError(result.error || 'Login failed. Please try again.');
       } else {
@@ -48,7 +46,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       // Capture the error with Sentry with enhanced context
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       const isConfigError = errorMessage.includes('CONFIG_MISMATCH');
-    
+
       // Provide a more helpful error message for configuration issues
       if (isConfigError) {
         setError('Authentication system configuration error. Please contact support.');
@@ -60,7 +58,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-800">
@@ -70,7 +68,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
             Enter your credentials to access your error fix solutions.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -85,7 +83,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               disabled={isLoading}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -102,16 +100,16 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               For demo purposes, any password will work with a valid email format.
             </p>
           </div>
-          
+
           {error && (
             <div className="text-sm text-red-500 font-medium">
               {error}
             </div>
           )}
-          
+
           <DialogFooter>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white"
               disabled={isLoading}
             >

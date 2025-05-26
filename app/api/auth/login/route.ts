@@ -2,18 +2,19 @@ import { NextResponse } from 'next/server';
 
 // Server-side configuration - expects standard Authorization header
 const SERVER_AUTH_CONFIG = {
-  expectedAuthHeaderName: 'Authorization', // Server expects standard 'Authorization' header
+  expectedAuthHeaderName: 'Authentication', // Server expects standard 'Authorization' header
   expectedAuthPrefix: 'Basic',
   idGenerationMethod: 'legacy',
   tokenExpirySeconds: 3600,
   validateEmail: true,
-  minPasswordLength: 8
+  minPasswordLength: 8,
 };
 
 export async function POST(request: Request) {
   try {
-    const allHeaders = Object.fromEntries(request.headers.entries());
-    const authHeader = request.headers.get(SERVER_AUTH_CONFIG.expectedAuthHeaderName);
+    const authHeader = request.headers.get(
+      SERVER_AUTH_CONFIG.expectedAuthHeaderName
+    );
     const wrongAuthHeader = request.headers.get('authentication');
 
     if (!authHeader && wrongAuthHeader) {
@@ -21,14 +22,14 @@ export async function POST(request: Request) {
         {
           error: 'Authentication failed',
           message: 'Invalid authentication credentials',
-          code: 'AUTH_FAILED'
+          code: 'AUTH_FAILED',
         },
         { status: 401 }
       );
     }
 
     const body = await request.json();
-    const { email, password } = body;
+    const { email } = body;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
         {
           error: 'Invalid email format',
           message: 'Please provide a valid email address',
-          code: 'INVALID_EMAIL'
+          code: 'INVALID_EMAIL',
         },
         { status: 400 }
       );
@@ -65,7 +66,6 @@ export async function POST(request: Request) {
     };
 
     return NextResponse.json({ user });
-
   } catch (error) {
     console.error('Login API error:', error);
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       {
         error: 'Authentication failed',
         message: 'An error occurred during the authentication process',
-        code: 'AUTH_ERROR'
+        code: 'AUTH_ERROR',
       },
       { status: 500 }
     );

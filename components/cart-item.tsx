@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { CartItem as CartItemType } from '@/types';
@@ -12,11 +11,11 @@ interface CartItemProps {
 
 export function CartItem({ item }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart();
-  
+
   return (
     <div className="flex items-start gap-4 p-4 border border-gray-800 rounded-lg bg-gray-900">
       <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-800 flex-shrink-0">
-        <Image
+        <img
           src={item.image}
           alt={item.name}
           width={96}

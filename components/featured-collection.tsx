@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,13 +25,13 @@ export function FeaturedCollection({ title, description, products }: FeaturedCol
             </Link>
           </Button>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => (
             <Link key={product.id} href={`/products/${product.id}`} className="group">
               <Card className="overflow-hidden border-0 bg-gray-800 transition-all hover:shadow-lg hover:shadow-red-500/20">
                 <div className="aspect-square overflow-hidden rounded-lg bg-gray-700">
-                  <Image
+                  <img
                     src={product.images[0]}
                     alt={product.name}
                     width={500}

@@ -8,7 +8,7 @@
 
 import { defineConfig } from 'drizzle-kit';
 import 'dotenv/config';
-import { join, resolve } from 'path';
+import { resolve } from 'node:path';
 
 const dbPath = resolve(process.cwd(), 'sqlite.db');
 

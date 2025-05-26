@@ -3,24 +3,22 @@
 import { useCart } from '@/context/cart-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import Image from 'next/image';
 
 export function CheckoutSummary() {
   const { items, totalPrice } = useCart();
-  
+
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardContent className="pt-6">
         <h2 className="text-2xl font-semibold mb-4 text-red-500">Order Summary</h2>
-        
+
         <div className="space-y-4 mb-6">
           {items.map((item) => (
             <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}`} className="flex gap-3">
               <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-800 flex-shrink-0">
-                <Image
+                <img
                   src={item.image}
                   alt={item.name}
-                  fill
                   className="object-cover"
                 />
                 <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-primary-foreground">
@@ -37,9 +35,9 @@ export function CheckoutSummary() {
             </div>
           ))}
         </div>
-        
+
         <Separator className="mb-4 bg-gray-800" />
-        
+
         <div className="space-y-1.5">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal</span>

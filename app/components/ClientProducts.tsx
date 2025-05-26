@@ -1,95 +1,69 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { ProductGrid } from '@/components/product-grid';
 import { FeaturedCollection } from '@/components/featured-collection';
-import { ProductGridSkeleton, FeaturedProductsSkeleton } from './ProductSkeleton';
-// import * as Sentry from '@sentry/nextjs';
-export function ClientProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+import { initDb } from '@/lib/db/db-server';
+import { sql } from 'drizzle-orm';
 
-  // Function to load products from the API
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      console.log('Loading products from API...');
-      
-       // BREAK-THIS: Ha - I've sabotaged you with a bad API call
-      const response = await fetch('/api/products');
-      
-      if (!response.ok) {
-        throw new Error(`API error with /api/product: ${response.status} ${response.statusText}`);
-      }
-      
-      const allProducts = await response.json();
-      
-      // Filter featured products
-      const featured = allProducts.filter((product: Product) => product.featured);
-      
-      console.log(`Loaded ${allProducts.length} products, ${featured.length} featured products`);
-      setProducts(allProducts);
-      setFeaturedProducts(featured);
-      setLoading(false);
-    } catch (err) {
-      // SENTRY-THIS: Ha - I'm catching your expceptions!
-      // Sentry.captureException(err);
-      console.error('Error loading products:', err);
-      setError(`Failed to load products: ${String(err)}`);
-      setLoading(false);
-      throw err;
+function parseJsonField(value: any): any[] {
+  if (!value) return [];
+
+  try {
+    if (typeof value === 'string') {
+      return JSON.parse(value);
     }
-  };
-
-  // Load products on initial mount
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  
-  if (error) {
-    return (
-      <div className="text-center py-10">
-        <div className="text-red-500 text-xl">Error loading products</div>
-        <div className="mt-2">{error}</div>
-      </div>
-    );
+    return value;
+  } catch (e) {
+    console.error('Error parsing JSON field:', e);
+    return [];
   }
+}
+
+async function getProducts() {
+  const { db } = await initDb();
+
+  const result = await db.all(sql`SELECT * FROM products`);
+
+  const products = result.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    price: row.price,
+    category: row.category,
+    featured: row.featured,
+    inStock: row.in_stock,
+    rating: row.rating,
+    reviewCount: row.review_count,
+    images: parseJsonField(row.images),
+    sizes: parseJsonField(row.sizes),
+    colors: parseJsonField(row.colors),
+  }));
+
+  return products;
+}
+
+export async function ClientProducts() {
+  const products = await getProducts();
+  const featuredProducts = products.filter(
+    (product: Product) => product.featured
+  );
 
   return (
     <>
-      {loading ? (
-        <>
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Featured Error Fixes</h2>
-            <p className="text-gray-600 mb-6">Loading featured products...</p>
-            <FeaturedProductsSkeleton />
-          </div>
-          <div className="mt-16">
-            <h2 className="text-4xl font-bold tracking-tight mb-8 text-red-500">All Error Solutions</h2>
-            <ProductGridSkeleton />
-          </div>
-        </>
-      ) : (
-        <>
-          <FeaturedCollection 
-            title="Featured Error Fixes" 
-            description="Good'ish solutions for those pesky bugs that keep your PR queue backed up"
-            products={featuredProducts}
-          />
-          <div className="container">
-            <h2 className="text-4xl font-bold tracking-tight mb-8 text-red-500">All Error Solutions</h2>
-            {products.length > 0 ? (
-              <ProductGrid products={products} />
-            ) : (
-              <p className="text-center py-10 text-gray-500">No products found</p>
-            )}
-          </div>
-        </>
-      )}
+      <FeaturedCollection
+        title='Featured Products'
+        description='Unique artifacts from across the multiverse'
+        products={featuredProducts}
+      />
+      <div className='container'>
+        <h2 className='text-4xl font-bold tracking-tight mb-8 text-red-500'>
+          All Products
+        </h2>
+        {products.length > 0 ? (
+          <ProductGrid products={products} />
+        ) : (
+          <p className='text-center py-10 text-gray-500'>No products found</p>
+        )}
+      </div>
     </>
   );
 }

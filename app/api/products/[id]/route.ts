@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 
 import { NextResponse } from 'next/server';
@@ -11,27 +10,32 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
+  const { id } = await params;
   console.log(`🔍 API: Looking for product with ID ${id}`);
-  
+
   try {
     const { db } = await initDb();
-    
+
     const numId = parseInt(id, 10);
     if (isNaN(numId)) {
-      return NextResponse.json({ 
-        error: `Invalid product ID: ${id}`,
-        message: 'The product ID must be a valid number',
-        code: 'INVALID_ID'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Invalid product ID: ${id}`,
+          message: 'The product ID must be a valid number',
+          code: 'INVALID_ID',
+        },
+        { status: 400 }
+      );
     }
-    
+
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
-    const result = await db.all(sql`SELECT * FROM product WHERE id = ${numId}`);
-    
+    const result = await db.all(
+      sql`SELECT * FROM products WHERE id = ${numId}`
+    );
+
     if (result && result.length > 0) {
       const row = result[0];
-      
+
       const product = {
         id: row.id,
         name: row.name,
@@ -44,23 +48,23 @@ export async function GET(
         reviewCount: row.review_count,
         images: parseJsonField(row.images),
         sizes: parseJsonField(row.sizes),
-        colors: parseJsonField(row.colors)
+        colors: parseJsonField(row.colors),
       };
-      
+
       return NextResponse.json(product);
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         error: `Product not found: ${id}`,
         message: 'The requested product does not exist in the database',
-        code: 'PRODUCT_NOT_FOUND'
+        code: 'PRODUCT_NOT_FOUND',
       },
       { status: 404 }
     );
   } catch (error) {
     console.error(`Loading error for product ${id}:`, error);
-    
+
     // SENTRY-THIS: Cathing your exceptions!
     // Sentry.captureException(error);
 
@@ -80,7 +84,7 @@ export async function GET(
  */
 function parseJsonField(value: any): any[] {
   if (!value) return [];
-  
+
   try {
     if (typeof value === 'string') {
       return JSON.parse(value);
