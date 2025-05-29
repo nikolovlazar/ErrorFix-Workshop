@@ -25,7 +25,13 @@ export async function POST(request: Request) {
     }
 
     if (user === 'admin@admin.com') {
-      throw new Error('Admin user cannot purchase');
+      return NextResponse.json(
+        {
+          message: 'Administrators are not allowed to make purchases. Please use a different account.',
+          code: 'ADMIN_PURCHASE_RESTRICTED'
+        },
+        { status: 403 }
+      );
     }
 
     if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
