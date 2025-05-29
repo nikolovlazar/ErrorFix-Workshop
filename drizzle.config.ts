@@ -11,7 +11,7 @@ import 'dotenv/config';
 
 export const DATABASE_URL =
   process.env.DATABASE_URL ||
-  'postgresql://readonly:npg_mZ5A0hQLbuGp@ep-plain-haze-a48ikisq-pooler.us-east-1.aws.neon.tech/errorfix?sslmode=require';
+  'postgresql://readonly:r34d0nly_p4ssw0rd@ep-calm-haze-a4kr3yzk-pooler.us-east-1.aws.neon.tech/errorfix?sslmode=require';
 
 export default defineConfig({
   dialect: 'postgresql',
