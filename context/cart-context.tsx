@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { CartItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import type { Product } from '@/types';
+import type { Product } from '@/lib/db/schema';
 
 interface CartContextType {
   items: CartItem[];

@@ -1,18 +1,3 @@
-export interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  images: string[];
-  category: string;
-  featured: boolean;
-  sizes: string[];
-  colors: string[];
-  inStock: boolean;
-  rating: number;
-  reviewCount: number;
-}
-
 export interface CartItem {
   id: number;
   name: string;

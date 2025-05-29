@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
-import { initDb } from '@/lib/db/db-server';
+import { db } from '@/lib/db';
+import { products } from '@/lib/db/schema';
 
 /**
  * GET handler for /api/products
@@ -8,11 +8,9 @@ import { initDb } from '@/lib/db/db-server';
  */
 export async function GET() {
   try {
-    const { db } = await initDb();
+    const result = await db.select().from(products);
 
-    const result = await db.all(sql`SELECT * FROM products`);
-
-    const products = result.map((row: any) => ({
+    const prods = result.map((row: any) => ({
       id: row.id,
       name: row.name,
       description: row.description,
@@ -27,7 +25,7 @@ export async function GET() {
       colors: parseJsonField(row.colors),
     }));
 
-    return NextResponse.json(products);
+    return NextResponse.json(prods);
   } catch (error) {
     console.error('Error in products API route:', error);
 

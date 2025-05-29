@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-// import * as Sentry from '@sentry/nextjs';
 
 export interface User {
   id: string;
@@ -122,47 +121,33 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
   }) => {
     set({ processingPurchase: true, purchaseError: null });
 
-    try {
-      const authState = useAuthStore.getState();
+    const authState = useAuthStore.getState();
 
-      const response = await fetch('/api/checkout/purchase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authState.isAuthenticated && authState.user
-            ? {
-                [AUTH_CONFIG.authHeaderName]: `${AUTH_CONFIG.tokenPrefix} ${authState.user.id}`,
-              }
-            : {}),
-        },
-        body: JSON.stringify(paymentDetails),
-      });
+    const response = await fetch('/api/checkout/purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authState.isAuthenticated && authState.user
+          ? {
+              [AUTH_CONFIG.authHeaderName]: `${AUTH_CONFIG.tokenPrefix} ${authState.user.id}`,
+            }
+          : {}),
+      },
+      body: JSON.stringify(paymentDetails),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'An error occurred during checkout.');
-      }
-
-      set({
-        processingPurchase: false,
-        purchaseComplete: true,
-      });
-
-      return { success: true };
-    } catch (error: any) {
-      // Sentry.captureException(error);
-      console.error('Purchase error:', error);
-      set({
-        processingPurchase: false,
-        purchaseError: error.message || 'Payment processing failed',
-      });
-
-      return {
-        success: false,
-        error: error.message || 'Payment processing failed. Please try again.',
-      };
+    if (!response.ok) {
+      throw new Error(data.message || 'An error occurred during checkout.');
     }
+
+    set({
+      processingPurchase: false,
+      purchaseComplete: true,
+    });
+
+    return { success: true };
   },
 
   resetPurchaseState: () => {

@@ -8,17 +8,16 @@
 
 import { defineConfig } from 'drizzle-kit';
 import 'dotenv/config';
-import { resolve } from 'node:path';
 
-const dbPath = resolve(process.cwd(), 'sqlite.db');
+export const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://readonly:npg_mZ5A0hQLbuGp@ep-plain-haze-a48ikisq-pooler.us-east-1.aws.neon.tech/errorfix?sslmode=require';
 
 export default defineConfig({
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
   dbCredentials: {
-    url: `file:${dbPath}`,
+    url: DATABASE_URL,
   },
-  verbose: true,
-  strict: true,
 });

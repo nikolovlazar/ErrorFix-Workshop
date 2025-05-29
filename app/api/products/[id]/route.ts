@@ -1,10 +1,10 @@
 // @ts-nocheck
 
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
-import { initDb } from '@/lib/db/db-server';
+import { db } from '@/lib/db';
+import { products } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 // import * as Sentry from '@sentry/nextjs';
-import { products } from '@/lib/data';
 
 export async function GET(
   request: Request,
@@ -14,8 +14,6 @@ export async function GET(
   console.log(`🔍 API: Looking for product with ID ${id}`);
 
   try {
-    const { db } = await initDb();
-
     const numId = parseInt(id, 10);
     if (isNaN(numId)) {
       return NextResponse.json(
@@ -29,9 +27,10 @@ export async function GET(
     }
 
     // BREAK-THIS: Ha - I've sabotaged you with bad queries
-    const result = await db.all(
-      sql`SELECT * FROM products WHERE id = ${numId}`
-    );
+    const result = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, numId));
 
     if (result && result.length > 0) {
       const row = result[0];
@@ -99,8 +98,9 @@ function parseJsonField(value: any): any[] {
 }
 
 // This is needed for Next.js static generation
-export function generateStaticParams() {
-  return products.map((product: any) => ({
-    id: String(product.id),
+export async function generateStaticParams() {
+  const prods = await db.select().from(products);
+  return prods.map((product: any) => ({
+    id: product.id.toString(),
   }));
 }

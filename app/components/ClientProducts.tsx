@@ -1,51 +1,25 @@
-import { Product } from '@/types';
 import { ProductGrid } from '@/components/product-grid';
 import { FeaturedCollection } from '@/components/featured-collection';
-import { initDb } from '@/lib/db/db-server';
-import { sql } from 'drizzle-orm';
-
-function parseJsonField(value: any): any[] {
-  if (!value) return [];
-
-  try {
-    if (typeof value === 'string') {
-      return JSON.parse(value);
-    }
-    return value;
-  } catch (e) {
-    console.error('Error parsing JSON field:', e);
-    return [];
-  }
-}
+import { db } from '@/lib/db';
+import { products } from '@/lib/db/schema';
+// import * as Sentry from '@sentry/nextjs';
 
 async function getProducts() {
-  const { db } = await initDb();
-
-  const result = await db.all(sql`SELECT * FROM products`);
-
-  const products = result.map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    price: row.price,
-    category: row.category,
-    featured: row.featured,
-    inStock: row.in_stock,
-    rating: row.rating,
-    reviewCount: row.review_count,
-    images: parseJsonField(row.images),
-    sizes: parseJsonField(row.sizes),
-    colors: parseJsonField(row.colors),
-  }));
-
-  return products;
+  // return Sentry.startSpan({
+  //   name: 'getProducts',
+  //   op: 'function',
+  // }, async (span) => {
+    const result = await db.select().from(products);
+    // span.setAttributes({
+    //   count: result.length,
+    // });
+    return result;
+  // });
 }
 
 export async function ClientProducts() {
   const products = await getProducts();
-  const featuredProducts = products.filter(
-    (product: Product) => product.featured
-  );
+  const featuredProducts = products.filter((product) => product.featured);
 
   return (
     <>

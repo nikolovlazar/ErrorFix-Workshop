@@ -1,5 +1,5 @@
-import type { Product } from '@/types';
 import { faker } from '@faker-js/faker';
+import { Product } from './db/schema';
 
 const products: Product[] = [];
 

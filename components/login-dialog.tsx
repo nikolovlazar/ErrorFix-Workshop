@@ -43,7 +43,6 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         onOpenChange(false);
       }
     } catch (err) {
-      // Capture the error with Sentry with enhanced context
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       const isConfigError = errorMessage.includes('CONFIG_MISMATCH');
 
