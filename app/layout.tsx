@@ -9,6 +9,8 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'ErrorFix | Goodish Solutions for Developer Nightmares',
   description: 'Because Code Breaks and Someone Has to Fix it ',
