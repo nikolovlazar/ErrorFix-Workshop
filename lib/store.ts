@@ -139,7 +139,9 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'An error occurred during checkout.');
+      const errorMessage = data.message || 'An error occurred during checkout.';
+      set({ processingPurchase: false, purchaseError: errorMessage });
+      return { success: false, error: errorMessage };
     }
 
     set({
@@ -148,6 +150,11 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
     });
 
     return { success: true };
+  } catch (error) { // Catch network errors or other unexpected errors
+    console.error('Make purchase unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during purchase.';
+    set({ processingPurchase: false, purchaseError: errorMessage });
+    return { success: false, error: errorMessage };
   },
 
   resetPurchaseState: () => {

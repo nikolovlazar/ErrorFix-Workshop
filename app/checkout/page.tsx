@@ -22,6 +22,7 @@ export default function CheckoutPage() {
   // Auth state
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const user = useAuthStore(state => state.user);
+  const isAdmin = isAuthenticated && user?.email === 'admin@admin.com';
 
   // Purchase state
   const {
@@ -278,18 +279,27 @@ export default function CheckoutPage() {
                 <p className="text-sm text-red-400">{purchaseError}</p>
               </div>
             )}
+            
+            {isAdmin && (
+              <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-yellow-400">Admin accounts are not allowed to make purchases. Please use a different account if you wish to proceed.</p>
+              </div>
+            )}
 
             <Button
               type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white"
               size="lg"
-              disabled={processingPurchase || !isAuthenticated}
+              disabled={processingPurchase || !isAuthenticated || isAdmin}
             >
               {!isAuthenticated
                 ? "Login Required"
-                : processingPurchase
-                  ? "Processing..."
-                  : `Pay $${totalPrice.toFixed(2)}`}
+                : isAdmin
+                  ? "Admin accounts cannot make purchases"
+                  : processingPurchase
+                    ? "Processing..."
+                    : `Pay $${totalPrice.toFixed(2)}`}
             </Button>
 
             <div className="flex items-center justify-center text-xs text-muted-foreground">
