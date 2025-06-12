@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-// import * as Sentry from '@sentry/nextjs';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Purchase API error:', error);
-    // Sentry.captureException(error);
+    Sentry.captureException(error);
 
     return NextResponse.json(
       {
