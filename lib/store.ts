@@ -136,11 +136,20 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
       body: JSON.stringify(paymentDetails),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.message || 'An error occurred during checkout.');
+      const data = await response.json();
+      set({
+        processingPurchase: false,
+        purchaseError: data.message || 'An error occurred during checkout.',
+        purchaseComplete: false,
+      });
+      return {
+        success: false,
+        error: data.message || 'An error occurred during checkout.'
+      };
     }
+
+    const data = await response.json();
 
     set({
       processingPurchase: false,
