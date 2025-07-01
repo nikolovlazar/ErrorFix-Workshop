@@ -102,7 +102,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               onValueChange={setSelectedSize}
               className="flex flex-wrap gap-2"
             >
-              {['Extra Small', 'Small', 'Medium', 'Large', 'Extra Large'].map((size) => (
+              {product.sizes.map((size) => (
                 <div key={size} className="flex items-center">
                   <RadioGroupItem
                     value={size}
