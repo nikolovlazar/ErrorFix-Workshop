@@ -18,8 +18,8 @@ for (let i = 0; i < 900; i++) {
     featured: faker.datatype.boolean(),
     inStock: faker.datatype.boolean(),
     sizes: faker.helpers.arrayElements(
-      ['Extra Small', 'Small', 'Medium', 'Extra Large'],
-      { min: 2, max: 4 }
+      ['Extra Small', 'Small', 'Medium', 'Large', 'Extra Large'],
+      { min: 2, max: 5 }
     ),
     colors: faker.helpers.arrayElements(colors, { min: 3, max: 8 }),
     rating: faker.number.float({ min: 1, max: 5 }),
